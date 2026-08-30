@@ -1,13 +1,11 @@
 {
-  "name": "payloca",
+   "name": "payloca",
   "version": "1.0.0",
-  "license": "MIT",
-  "scripts": { ,
-  "dev": "vite",
-  "build": "vite build",
-  "preview": "vite preview",
-  "typecheck": "echo skip",
-  "typecheck:libs": "echo skip",
+  "private": true,
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
 } 
     "preinstall": "sh -c 'rm -f package-lock.json yarn.lock; case \"$npm_config_user_agent\" in pnpm/*) ;; *) echo \"Use pnpm instead\" >&2; exit 1 ;; esac'",
     "build": "pnpm run typecheck && pnpm -r --if-present run build",
@@ -27,7 +25,8 @@
   },
   "private": true,
   "dependencies": {
-    "@replit/connectors-sdk": "^0.4.1"
+     "react": "^18.3.1",
+    "react-dom": "^18.3.1"
   },
   "devDependencies": {
      "prettier": "^3.5.3",
