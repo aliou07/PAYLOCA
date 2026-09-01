@@ -1,17 +1,17 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 
-function App() {
+function Application() {
   return (
     <div style={{padding: '40px', textAlign: 'center'}}>
-      <h1>PAYLOCA 🚀</h1>
-      <p>Le site est en ligne !</p>
+      <h1>PAYLOCA</h1>
+      <p>Votre site est en ligne !</p>
     </div>
   )
 }
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
+ReactDOM.createRoot(document.getElementById('racine')!).render(
   <React.StrictMode>
-    <App />
+    <Application />
   </React.StrictMode>,
 )
