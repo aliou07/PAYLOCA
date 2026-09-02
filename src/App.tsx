@@ -1,26 +1,27 @@
-  import { useEffect, useState } from 'react'
-import { supabase } from '../lib/db/client'
+import { useState } from 'react'
+import { supabase } from './lib/db/client'
 
 function App() {
-  const [status, setStatus] = useState('Connexion à la DB...')
+  const [msg, setMsg] = useState('')
 
-  useEffect(() => {
-    async function testDb() {
-      const { error } = await supabase.from('test').select('*')
-      if (error) {
-        setStatus('✅ DB connectée ! La table "test" n\'existe pas encore')
-      } else {
-        setStatus('✅ DB connectée et table trouvée')
-      }
-    }
-    testDb()
-  }, [])
+  async function addUser() {
+    const { data, error } = await supabase.from('users').insert([
+      { email: 'test@payloca.com', name: 'Test User' }
+    ]).select()
+    
+    if (error) setMsg('❌ Erreur: ' + error.message)
+    else setMsg('✅ Ajouté! ' + data[0].email)
+  }
 
   return (
     <div style={{textAlign: 'center', padding: '50px'}}>
       <h1>PAYLOCA 🚀</h1>
-      <p>{status}</p>
+      <button onClick={addUser} style={{padding: '15px 30px', background: '#0070f3', color: 'white', border: 'none', borderRadius: '8px'}}>
+        Ajouter utilisateur test
+      </button>
+      <p style={{marginTop: '20px'}}>{msg}</p>
     </div>
   )
 }
 export default App
+
