@@ -1,6 +1,7 @@
-import { pgTable, serial, varchar, text, timestamp, uuid } from 'drizzle-orm/pg-core'
-export const users = pgTable('users', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  email: varchar('email', { length: 256 }).notNull().unique(),
-  createdAt: timestamp('created_at').defaultNow(),
-})
+/**
+ * Point d’entrée public de tous les schémas Drizzle PAYLOCA.
+ *
+ * Les tables sont conservées dans des fichiers séparés sous
+ * lib/db/src/schema/ afin de préserver l’organisation actuelle du projet.
+ */
+export * from "./src/schema";
