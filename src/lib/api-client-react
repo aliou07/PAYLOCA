@@ -1,21 +1,2 @@
-import { supabase } from './db/client'
+{}
 
-// Exemple : Récupérer tous les utilisateurs
-export async function getUsers() {
-  const { data, error } = await supabase
-    .from('users')
-    .select('*')
-  
-  if (error) throw error
-  return data
-}
-
-// Exemple : Ajouter un utilisateur
-export async function addUser(email: string, name: string) {
-  const { data, error } = await supabase
-    .from('users')
-    .insert([{ email, name }])
-  
-  if (error) throw error
-  return data
-}
