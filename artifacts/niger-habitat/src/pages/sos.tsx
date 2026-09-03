@@ -297,4 +297,93 @@ export default function SosPage() {
                 {locationError && (
                   <div role="alert" className="rounded-2xl border border-[#dca79b] bg-[#fff1ec] p-5 shadow-sm animate-in slide-in-from-top-2">
                     <p className="text-sm font-bold text-[#9d3526] flex items-center gap-2"><AlertTriangle size={18} /> {locationError}</p>
-                    <button type="button" onClick={prepareWithoutLocation} className="mt-4 rounded-xl bg-[#9d3526] px-5 py-2.5 text-sm font-bold text-white transition-transform active:scale-95">Continuer sans la position</button>
+                    <button type="button" onClick={prepareWithoutLocation} className="mt-4 rounded-xl bg-[#9d3526] px-5 py-2.5 text-sm font-bold text-white transition-transform active:scale-95">Continuer sans la position</button>                  </div>
+                )}
+
+                <div className="pt-4 pb-8">
+                  <button
+                    type="button"
+                    disabled={selectedContacts.length === 0}
+                    onPointerDown={onPointerDown}
+                    onPointerUp={stopPress}
+                    onPointerLeave={stopPress}
+                    onPointerCancel={stopPress}
+                    onKeyDown={onKeyDown}
+                    onKeyUp={onKeyUp}
+                    style={{ touchAction: 'none' }}
+                    className="group relative w-full overflow-hidden rounded-[24px] bg-[#d93f2c] p-7 text-center font-bold text-white shadow-lg transition-transform active:scale-[0.97] disabled:opacity-50 disabled:active:scale-100 disabled:shadow-none select-none focus:outline-none focus-visible:ring-4 focus-visible:ring-[#d93f2c] focus-visible:ring-offset-4 focus-visible:ring-offset-[#f4efdf]"
+                    aria-label="Maintenir appuyé pendant 3 secondes pour préparer les messages SOS"
+                  >
+                    <div className="absolute inset-0 bg-[#b32b1a] origin-left transition-none" style={{ transform: `scaleX(${pressProgress / 100})` }} />
+                    <span className="relative z-10 text-lg sm:text-xl flex items-center justify-center gap-3">
+                      <Navigation size={24} className={pressProgress > 0 ? "animate-pulse" : ""} />
+                      {pressProgress > 0 ? 'Préparation en cours...' : 'Maintenez 3 secondes pour préparer'}
+                    </span>
+                  </button>
+                  <div aria-live="polite" className="mt-4 text-center text-sm font-medium text-[#596071]">
+                    {pressProgress > 0 ? `${Math.round(pressProgress)}%` : 'Un appui long évite les déclenchements accidentels.'}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {sosState === 'locating' && (
+              <div className="rounded-3xl border border-[#dfd7c4] bg-[#faf6ec] p-10 text-center shadow-sm">
+                <MapPin size={40} className="mx-auto mb-5 animate-bounce text-[#b95740]" />
+                <p className="font-bold text-xl text-[#20283c]">Recherche de votre position...</p>
+                <p className="mt-3 text-sm font-medium text-[#596071]">Veuillez autoriser l'accès GPS si votre navigateur vous le demande.</p>
+              </div>
+            )}
+
+            {sosState === 'prepared' && (
+              <div className="space-y-8 animate-in zoom-in-95 duration-300">
+                <div className="rounded-2xl border border-[#a3d9b1] bg-[#eef7ed] p-6 shadow-sm">
+                  <div className="flex items-center gap-2.5 text-[#267158] font-bold text-lg mb-4">
+                    <CheckCircle size={24} /> Message préparé avec succès
+                  </div>
+                  <div className="bg-white p-5 rounded-xl border border-[#c6e6cf] text-sm font-medium text-[#20283c] whitespace-pre-wrap leading-relaxed shadow-sm">
+                    {preparedMessage}
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-[#d9cfbc] bg-[#faf6ec] p-6 shadow-sm">
+                  <p className="text-base font-bold text-[#20283c] mb-4">Cliquez sur chaque contact pour ouvrir votre application SMS :</p>
+                  <div className="space-y-3">
+                    {contacts.filter(c => selectedContacts.includes(c.id)).map(c => {
+                      const isIOS = typeof navigator !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent || '');
+                      const separator = isIOS ? '&' : '?';
+                      const href = `sms:${c.phone}${separator}body=${encodeURIComponent(preparedMessage)}`;
+
+                      return (
+                        <a key={c.id} href={href} className="group flex items-center justify-between rounded-xl bg-[#20283c] p-4 sm:p-5 text-white shadow-md hover:bg-[#323c52] transition-all active:scale-[0.98] focus:outline-none focus-visible:ring-4 focus-visible:ring-[#20283c] focus-visible:ring-offset-2 focus-visible:ring-offset-[#faf6ec]">
+                          <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
+                            <span className="font-bold text-base">Ouvrir le SMS pour {c.name}</span>
+                            <span className="text-xs font-medium text-[#8c96ab] sm:before:content-['•'] sm:before:mr-3">{c.phone}</span>
+                          </div>
+                          <span className="flex size-10 items-center justify-center rounded-full bg-white/10 group-hover:bg-white/20 transition-colors">
+                            <Smartphone size={20} />
+                          </span>
+                        </a>
+                      );
+                    })}
+                  </div>
+                  <div className="mt-5 rounded-xl bg-[#fff1ec] p-4 border border-[#dca79b]">
+                     <p className="text-sm font-bold text-[#9d3526] text-center">N'oubliez pas d'appuyer sur "Envoyer" dans votre application SMS pour chaque contact.</p>
+                  </div>
+                </div>
+
+                <button type="button" onClick={() => {
+                  setSosState('idle');
+                  setPressProgress(0);
+                  setPreparedMessage('');
+                }} className="w-full rounded-2xl border border-[#d9cfbc] bg-white p-5 text-sm font-bold text-[#596071] hover:bg-[#f4efdf] hover:text-[#20283c] transition-colors focus:outline-none focus-visible:ring-4 focus-visible:ring-[#d9cfbc] focus-visible:ring-offset-2">
+                  Annuler et revenir au début
+                </button>
+              </div>
+            )}
+          </section>
+        </div>
+      )}
+    </div>
+  );
+}
