@@ -3,7 +3,10 @@ import {
   eq,
   and,
 } from "drizzle-orm";
-import { Router, type IRouter } from "express";
+import {
+  Router,
+  type IRouter,
+} from "express";
 import {
   db,
   feedPostsTable,
@@ -19,7 +22,9 @@ import {
   type AuthenticatedRequest,
 } from "../middlewares/requireAuth";
 import { containsUnsafeContact } from "../lib/jobSafety";
+
 const router: IRouter = Router();
+
 function publicFeedPost(
   post: typeof feedPostsTable.$inferSelect,
 ) {
@@ -34,14 +39,18 @@ function publicFeedPost(
     createdAt: post.createdAt,
   };
 }
+
 router.get(
   "/feed/posts",
   async (_req, res): Promise<void> => {
     const posts = await db
       .select()
       .from(feedPostsTable)
-      .orderBy(desc(feedPostsTable.createdAt))
+      .orderBy(
+        desc(feedPostsTable.createdAt),
+      )
       .limit(100);
+
     res.json(
       ListFeedPostsResponse.parse(
         posts.map(publicFeedPost),
@@ -49,29 +58,39 @@ router.get(
     );
   },
 );
+
 router.post(
   "/feed/posts",
   requireAuth,
   async (req, res): Promise<void> => {
-    const body = CreateFeedPostBody.safeParse(
-      req.body,
-    );
+    const body =
+      CreateFeedPostBody.safeParse(
+        req.body,
+      );
+
     if (!body.success) {
       res.status(400).json({
         error: body.error.message,
       });
       return;
     }
-    const caption = body.data.caption.trim();
-    const community = body.data.community.trim();
-    const city = body.data.city.trim();
+
+    const caption =
+      body.data.caption.trim();
+
+    const community =
+      body.data.community.trim();
+
+    const city =
+      body.data.city.trim();
+
     if (
-      caption.length < 1 ||
-      caption.length > 700 ||
-      community.length < 2 ||
-      community.length > 60 ||
-      city.length < 2 ||
-      city.length > 80
+      caption.length < 1
+      || caption.length > 700
+      || community.length < 2
+      || community.length > 60
+      || city.length < 2
+      || city.length > 80
     ) {
       res.status(400).json({
         error:
@@ -79,6 +98,7 @@ router.post(
       });
       return;
     }
+
     if (
       [caption, community, city].some(
         containsUnsafeContact,
@@ -90,18 +110,23 @@ router.post(
       });
       return;
     }
+
     const authenticated =
       req as AuthenticatedRequest;
+
     const authorName =
       await getAuthenticatedUserName(
         authenticated.userId,
         req,
       );
+
     const [created] = await db
       .insert(feedPostsTable)
       .values({
-        clientPostId: body.data.clientPostId,
-        authorId: authenticated.userId,
+        clientPostId:
+          body.data.clientPostId,
+        authorId:
+          authenticated.userId,
         authorName,
         community,
         city,
@@ -115,9 +140,10 @@ router.post(
         ],
       })
       .returning();
+
     const post =
-      created ??
-      (
+      created
+      ?? (
         await db
           .select()
           .from(feedPostsTable)
@@ -135,6 +161,7 @@ router.post(
           )
           .limit(1)
       )[0];
+
     if (!post) {
       res.status(500).json({
         error:
@@ -142,6 +169,7 @@ router.post(
       });
       return;
     }
+
     res.status(201).json(
       CreateFeedPostResponse.parse(
         publicFeedPost(post),
@@ -149,4 +177,5 @@ router.post(
     );
   },
 );
+
 export default router;
