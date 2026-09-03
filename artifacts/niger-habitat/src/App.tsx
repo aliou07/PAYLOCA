@@ -3625,4 +3625,1983 @@ function GiftPanel() {
       const response =
         await authenticatedFetch(
           "/api/gifts/redeem",
+                method: "POST",
+        headers: {
+          "Content-Type":
+            "application/json",
+        },
+        body: JSON.stringify({
+          code:
+            redeemCode
+              .trim()
+              .toUpperCase(),
+        }),
+      });
+
+      const payload =
+        await response
+          .json()
+          .catch(() => ({})) as {
+            error?: string;
+            membership?: {
+              plan?: string;
+              trialEndsAt?: string;
+            };
+          };
+
+      if (!response.ok) {
+        throw new Error(
+          payload.error
+            ?? "Impossible d’activer ce cadeau.",
+        );
+      }
+
+      setRedeemCode("");
+
+      setNotice(
+        `Cadeau activé : ${
+          payload.membership?.plan
+            === "vip_or"
+            ? "VIP Or"
+            : "VIP Bronze"
+        } jusqu’au ${
+          payload.membership?.trialEndsAt
+            ? new Date(
+                payload.membership.trialEndsAt,
+              ).toLocaleDateString("fr-FR")
+            : "la fin de votre période"
+        }.`,
+      );
+
+      await loadGifts();
+    } catch (reason) {
+      setNotice("");
+
+      setError(
+        reason instanceof Error
+          ? reason.message
+          : "Impossible d’activer ce cadeau.",
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!user) {
+    return (
+      <section className="mt-8 rounded-[24px] border border-[#dfd7c4] bg-[#faf6ec] p-6 shadow-[0_5px_0_#e8deca]">
+        <span className="text-xs font-bold uppercase tracking-[.18em] text-[#b95740]">
+          Cadeau VIP
+        </span>
+
+        <h2 className="mt-2 font-display text-2xl font-bold">
+          Offrir un abonnement VIP
+        </h2>
+
+        <p className="mt-3 text-sm leading-6 text-[#676b76]">
+          Connectez-vous pour offrir une formule Bronze ou Or de 1, 2 ou 4 mois à un proche, ou utiliser un code reçu.
+        </p>
+
+        <Link
+          href="/sign-in"
+          className="mt-5 inline-flex rounded-xl bg-[#b95740] px-5 py-3 text-sm font-bold text-white"
+        >
+          Se connecter
+        </Link>
+      </section>
+    );
+  }
+
+  return (
+    <section className="mt-8 rounded-[24px] border border-[#dfd7c4] bg-[#faf6ec] p-6 shadow-[0_5px_0_#e8deca]">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <span className="text-xs font-bold uppercase tracking-[.18em] text-[#b95740]">
+            Cadeau VIP
+          </span>
+
+          <h2 className="mt-2 font-display text-2xl font-bold">
+            Offrir un abonnement VIP
+          </h2>
+
+          <p className="mt-2 max-w-xl text-sm leading-6 text-[#676b76]">
+            Choisissez Bronze ou Or et une durée de 1, 2 ou 4 mois, indiquez le numéro +227 du bénéficiaire et payez avec Mynita. Si ce numéro a déjà un compte PAYLOCA, l’abonnement sera activé automatiquement. Sinon, un code permettra de le réclamer après inscription.
+          </p>
+        </div>
+
+        <span className="rounded-full bg-[#f0dfae] px-3 py-1 text-xs font-bold text-[#685523]">
+          {giftPlan === "VIP_OR"
+            ? giftDuration * 1000
+            : giftDuration * 500}{" "}
+          F CFA · {giftDuration} mois
+        </span>
+      </div>
+
+      <form
+        onSubmit={startGiftPayment}
+        className="mt-6 grid gap-3 md:grid-cols-[1fr_1fr_auto]"
+      >
+        <label className="text-sm font-bold">
+          Numéro du bénéficiaire
+
+          <input
+            required
+            inputMode="tel"
+            value={toPhone}
+            onChange={(event) =>
+              setToPhone(
+                event.target.value,
+              )
+            }
+            placeholder="+227 90 12 34 56"
+            data-testid="input-gift-phone"
+            className="mt-2 w-full rounded-xl border border-[#d9cfbc] bg-[#f4efdf] p-3 font-medium outline-none focus:border-[#b95740]"
+          />
+
+          <span className="mt-1 block text-xs font-normal text-[#777977]">
+            Le bénéficiaire devra se connecter avec ce même numéro.
+          </span>
+        </label>
+
+        <label className="text-sm font-bold">
+          Forfait offert
+
+          <select
+            value={giftPlan}
+            onChange={(event) =>
+              setGiftPlan(
+                event.target.value as
+                  | "VIP_BRONZE"
+                  | "VIP_OR",
+              )
+            }
+            data-testid="select-gift-plan"
+            className="mt-2 w-full rounded-xl border border-[#d9cfbc] bg-[#f4efdf] p-3 font-medium outline-none focus:border-[#b95740]"
+          >
+            <option value="VIP_BRONZE">
+              VIP Bronze · 500 F/mois
+            </option>
+
+            <option value="VIP_OR">
+              VIP Or · 1 000 F/mois
+            </option>
+          </select>
+        </label>
+
+        <label className="text-sm font-bold">
+          Durée
+
+          <select
+            value={giftDuration}
+            onChange={(event) =>
+              setGiftDuration(
+                Number(
+                  event.target.value,
+                ) as 1 | 2 | 4,
+              )
+            }
+            data-testid="select-gift-duration"
+            className="mt-2 w-full rounded-xl border border-[#d9cfbc] bg-[#f4efdf] p-3 font-medium outline-none focus:border-[#b95740]"
+          >
+            <option value="1">
+              1 mois ·{" "}
+              {giftPlan === "VIP_OR"
+                ? "1 000"
+                : "500"}{" "}
+              F
+            </option>
+
+            <option value="2">
+              2 mois ·{" "}
+              {giftPlan === "VIP_OR"
+                ? "2 000"
+                : "1 000"}{" "}
+              F
+            </option>
+
+            <option value="4">
+              4 mois ·{" "}
+              {giftPlan === "VIP_OR"
+                ? "4 000"
+                : "2 000"}{" "}
+              F
+            </option>
+          </select>
+        </label>
+
+        <button
+          type="submit"
+          disabled={loading}
+          data-testid="button-gift-payment"
+          className="self-end rounded-xl bg-[#9333ea] px-5 py-3 font-bold text-white disabled:opacity-60"
+        >
+          {loading
+            ? "Préparation…"
+            : "Payer avec Mynita"}
+        </button>
+      </form>
+
+      <form
+        onSubmit={redeem}
+        className="mt-6 rounded-2xl border border-[#cfe1d0] bg-[#eef7ed] p-4"
+      >
+        <label className="block text-sm font-bold text-[#267158]">
+          Vous avez reçu un code cadeau ?
+
+          <div className="mt-2 flex flex-col gap-2 sm:flex-row">
+            <input
+              required
+              value={redeemCode}
+              onChange={(event) =>
+                setRedeemCode(
+                  event.target.value.toUpperCase(),
+                )
+              }
+              placeholder="AB12-CD34-EF56"
+              data-testid="input-redeem-gift-code"
+              className="min-w-0 flex-1 rounded-xl border border-[#b9d4bb] bg-white p-3 font-bold tracking-[.12em] outline-none focus:border-[#267158]"
+            />
+
+            <button
+              type="submit"
+              disabled={loading}
+              data-testid="button-redeem-gift"
+              className="rounded-xl bg-[#267158] px-5 py-3 font-bold text-white disabled:opacity-60"
+            >
+              Activer le cadeau
+            </button>
+          </div>
+        </label>
+      </form>
+
+      {notice && (
+        <p
+          role="status"
+          className="mt-4 rounded-xl bg-[#eef7ed] p-3 text-sm font-bold text-[#267158]"
+        >
+          {notice}
+        </p>
+      )}
+
+      {error && (
+        <p
+          role="alert"
+          className="mt-4 rounded-xl bg-[#fff1eb] p-3 text-sm font-bold text-[#8f3e32]"
+        >
+          {error}
+        </p>
+      )}
+
+      <div className="mt-6 border-t border-[#e7dfcf] pt-5">
+        <div className="flex items-center justify-between gap-3">
+          <h3 className="font-display text-xl font-bold">
+            Mes cadeaux
+          </h3>
+
+          <button
+            type="button"
+            onClick={() =>
+              void loadGifts()
+            }
+            disabled={loadingGifts}
+            className="text-xs font-bold text-[#b95740] disabled:opacity-50"
+          >
+            {loadingGifts
+              ? "Actualisation…"
+              : "Actualiser"}
+          </button>
+        </div>
+
+        {loadingGifts && !gifts.length ? (
+          <p className="mt-3 text-sm text-[#777977]">
+            Chargement de vos cadeaux…
+          </p>
+        ) : !gifts.length ? (
+          <p className="mt-3 text-sm leading-6 text-[#777977]">
+            Aucun cadeau envoyé ou reçu pour le moment.
+          </p>
+        ) : (
+          <div className="mt-3 space-y-2">
+            {gifts.map((gift) => (
+              <div
+                key={`${gift.direction}-${gift.id}`}
+                className="rounded-xl border border-[#e3dccd] bg-[#f4efdf] p-3 text-sm"
+              >
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="font-bold">
+                    {gift.direction === "sent"
+                      ? `Offert à ${gift.toPhone}`
+                      : "Reçu sur votre numéro"}{" "}
+                    ·{" "}
+                    {gift.plan === "VIP_OR"
+                      ? "VIP Or"
+                      : "VIP Bronze"}
+                  </span>
+
+                  <span className="rounded-full bg-white px-2 py-1 text-xs font-bold text-[#596071]">
+                    {giftStatusLabel(
+                      gift.status,
+                    )}
+                  </span>
+                </div>
+
+                {gift.code
+                  && gift.status
+                    === "PAID" && (
+                  <p className="mt-2 font-mono text-sm font-bold tracking-[.12em] text-[#267158]">
+                    Code : {gift.code}
+                  </p>
+                )}
+
+                {gift.status
+                  === "PENDING_PAYMENT" && (
+                  <p className="mt-2 text-xs text-[#777977]">
+                    Le code apparaîtra après la confirmation Mynita.
+                  </p>
+                )}
+
+                <p className="mt-1 text-xs text-[#777977]">
+                  Valable jusqu’au{" "}
+                  {new Date(
+                    gift.expiresAt,
+                  ).toLocaleDateString(
+                    "fr-FR",
+                  )}
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </section>
+  );
+},
+        function AuthGate({
+  children,
+}: {
+  children: ReactNode;
+}) {
+  const {
+    isLoaded,
+    isSignedIn,
+    accountType,
+    accountTypeLoading,
+    accountTypeRequired,
+  } = usePaylocaAuth();
+
+  if (!isLoaded) {
+    return (
+      <Shell>
+        <section className="page-shell py-20 text-center text-sm text-[#676b76]">
+          Chargement de votre session…
+        </section>
+      </Shell>
+    );
+  }
+
+  if (!isSignedIn) {
+    return (
+      <Shell>
+        <section className="page-shell flex min-h-[55vh] items-center justify-center py-12">
+          <div className="w-full max-w-md rounded-[24px] border border-[#dfd7c4] bg-[#faf6ec] p-8 text-center shadow-[0_5px_0_#e8deca]">
+            <span className="text-xs font-bold uppercase tracking-[.18em] text-[#b95740]">
+              Compte PAYLOCA requis
+            </span>
+
+            <h1 className="mt-3 font-display text-3xl font-bold">
+              Connectez-vous pour continuer
+            </h1>
+
+            <p className="mt-3 text-sm leading-6 text-[#676b76]">
+              Votre compte sécurise vos annonces et vos échanges.
+            </p>
+
+            <Link
+              href="/sign-in"
+              className="mt-7 inline-flex rounded-xl bg-[#b95740] px-5 py-3 font-bold text-white"
+            >
+              Se connecter
+            </Link>
+          </div>
+        </section>
+      </Shell>
+    );
+  }
+
+  if (
+    accountTypeLoading
+    && accountType === null
+  ) {
+    return (
+      <Shell>
+        <section className="page-shell py-20 text-center text-sm text-[#676b76]">
+          Chargement de votre espace…
+        </section>
+      </Shell>
+    );
+  }
+
+  if (
+    accountType === null
+    || accountTypeRequired
+  ) {
+    return <SignInPage />;
+  }
+
+  if (isSignedIn) {
+    return <>{children}</>;
+  }
+
+  return (
+    <Shell>
+      <section className="page-shell flex min-h-[55vh] items-center justify-center py-12">
+        <div className="w-full max-w-md rounded-[24px] border border-[#dfd7c4] bg-[#faf6ec] p-8 text-center shadow-[0_5px_0_#e8deca]">
+          <span className="text-xs font-bold uppercase tracking-[.18em] text-[#b95740]">
+            Compte PAYLOCA requis
+          </span>
+
+          <h1 className="mt-3 font-display text-3xl font-bold">
+            Connectez-vous pour continuer
+          </h1>
+
+          <p className="mt-3 text-sm leading-6 text-[#676b76]">
+            Votre compte sécurise vos annonces et vos échanges.
+          </p>
+
+          <Link
+            href="/sign-in"
+            className="mt-7 inline-flex rounded-xl bg-[#b95740] px-5 py-3 font-bold text-white"
+          >
+            Se connecter
+          </Link>
+        </div>
+      </section>
+    </Shell>
+  );
+}
+
+const accountSpaces: Array<{
+  type: AccountType;
+  title: string;
+  description: string;
+  icon: string;
+}> = [
+  {
+    type: "user",
+    title: "Utilisateur",
+    description:
+      "Consulter les annonces, échanger et participer à la communauté PAYLOCA.",
+    icon: "⌂",
+  },
+];
+
+function AccountTypeChooser() {
+  return (
+    <div className="auth-shell flex min-h-[100dvh] items-center justify-center bg-[#e8ddc6] p-4">
+      <div className="auth-card w-full max-w-xl rounded-[28px] bg-[#faf6ec] p-6 shadow-[0_5px_0_#e8deca] md:p-10">
+        <span className="text-xs font-bold uppercase tracking-[.18em] text-[#b95740]">
+          Accès obligatoire par SMS
+        </span>
+
+        <h1 className="mt-3 font-display text-4xl font-bold tracking-[-.04em]">
+          Entrez dans PAYLOCA
+        </h1>
+
+        <p className="mt-3 max-w-2xl text-sm leading-6 text-[#676b76]">
+          Pour protéger votre compte, nous vous demanderons votre nom, votre ville et votre numéro nigérien avant l’accès à l’application.
+        </p>
+
+        <div className="mt-8">
+          {accountSpaces.map((space) => (
+            <Link
+              key={space.type}
+              href="/sign-in/user"
+              data-testid="link-account-type-user"
+              className="group block rounded-[22px] border border-[#dfd7c4] bg-[#f4efdf] p-5 transition-transform hover:-translate-y-1 hover:border-[#b95740] hover:shadow-[0_5px_0_#e8deca]"
+            >
+              <span className="grid size-12 place-items-center rounded-2xl bg-[#20283c] font-display text-2xl font-bold text-[#f7e8b4]">
+                {space.icon}
+              </span>
+
+              <h2 className="mt-5 font-display text-2xl font-bold">
+                {space.title}
+              </h2>
+
+              <p className="mt-2 text-sm leading-6 text-[#676b76]">
+                {space.description}
+              </p>
+
+              <span className="mt-5 inline-flex text-sm font-bold text-[#b95740]">
+                Continuer
+                <ArrowRight
+                  size={16}
+                  className="ml-1 transition-transform group-hover:translate-x-1"
+                />
+              </span>
+            </Link>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AccountTypeGate({
+  allowed,
+  children,
+}: {
+  allowed: readonly AccountType[];
+  children: ReactNode;
+}) {
+  const {
+    isLoaded,
+    isSignedIn,
+    accountType,
+    accountTypeLoading,
+    accountTypeRequired,
+  } = usePaylocaAuth();
+
+  if (!isLoaded) {
+    return (
+      <Shell>
+        <section className="page-shell py-20 text-center text-sm text-[#676b76]">
+          Chargement de votre session…
+        </section>
+      </Shell>
+    );
+  }
+
+  if (!isSignedIn) {
+    return <AuthGate>{children}</AuthGate>;
+  }
+
+  if (
+    accountTypeLoading
+    && accountType === null
+  ) {
+    return (
+      <Shell>
+        <section className="page-shell py-20 text-center text-sm text-[#676b76]">
+          Chargement de votre espace…
+        </section>
+      </Shell>
+    );
+  }
+
+  if (
+    accountType === null
+    || accountTypeRequired
+  ) {
+    return <SignInPage />;
+  }
+
+  if (!allowed.includes(accountType)) {
+    return (
+      <Shell>
+        <section className="page-shell flex min-h-[55vh] items-center justify-center py-12">
+          <div className="max-w-md rounded-[25px] border border-[#e4bbb0] bg-[#fff1eb] p-7 text-center">
+            <h1 className="font-display text-3xl font-bold text-[#8f3e32]">
+              Accès réservé
+            </h1>
+
+            <p className="mt-3 text-sm leading-6 text-[#8f3e32]">
+              Cette fonctionnalité appartient à un autre espace PAYLOCA.
+            </p>
+
+            <Link
+              href={
+                accountType === "agency"
+                  ? "/espace-agence"
+                  : accountType === "ong"
+                    ? "/espace-ong"
+                    : "/"
+              }
+              className="mt-6 inline-flex rounded-xl bg-[#b95740] px-4 py-3 text-sm font-bold text-white"
+            >
+              Retour à mon espace
+            </Link>
+          </div>
+        </section>
+      </Shell>
+    );
+  }
+
+  return <>{children}</>;
+}
+
+function UserFunPanel() {
+  const { user } =
+    usePaylocaAuth();
+
+  if (user?.accountType !== "user") {
+    return null;
+  }
+
+  return (
+    <section
+      className="mt-8 rounded-2xl border border-purple-200 bg-purple-100 p-5 text-purple-950 shadow-sm"
+      data-testid="panel-user-fun"
+    >
+      <p className="text-xs font-bold uppercase tracking-[.16em] text-purple-700">
+        Espace utilisateur
+      </p>
+
+      <h2 className="mt-2 font-display text-2xl font-bold">
+        Créez, regardez et partagez.
+      </h2>
+
+      <p className="mt-2 text-sm leading-6 text-purple-900/80">
+        Retrouvez les vidéos courtes de la communauté dans PAYLOCA FUN.
+      </p>
+
+      <Link
+        href="/fil"
+        className="mt-4 block rounded-xl bg-white px-4 py-3 text-center text-sm font-bold text-purple-900 shadow-sm transition hover:bg-purple-50"
+        data-testid="button-user-fun"
+      >
+        Ouvrir PAYLOCA FUN
+      </Link>
+    </section>
+  );
+}
+
+function SignInPage() {
+  const {
+    configured,
+    isSignedIn,
+    accountType,
+    accountTypeRequired,
+    user,
+    requestOtp,
+    confirmOtp,
+    resendOtp,
+    completeProfile,
+  } = usePaylocaAuth();
+
+  const [location, setLocation] =
+    useLocation();
+
+  const validType =
+    location === "/sign-in/user"
+    || location === "/sign-up/user"
+      ? ("user" as const)
+      : null;
+
+  const [name, setName] =
+    useState("");
+
+  const [phone, setPhone] =
+    useState("+227");
+
+  const [city, setCity] =
+    useState("");
+
+  const [sentTo, setSentTo] =
+    useState("");
+
+  const [code, setCode] =
+    useState("");
+
+  const [loading, setLoading] =
+    useState(false);
+
+  const [error, setError] =
+    useState("");
+
+  const [profileCity, setProfileCity] =
+    useState("");
+
+  const completingProfile =
+    Boolean(
+      isSignedIn
+      && accountType === "user"
+      && accountTypeRequired,
+    );
+
+  useEffect(() => {
+    if (
+      !isSignedIn
+      || !accountType
+      || accountTypeRequired
+    ) {
+      return;
+    }
+
+    setLocation(
+      accountType === "agency"
+        ? "/espace-agence"
+        : accountType === "ong"
+          ? "/espace-ong"
+          : "/",
+    );
+  }, [
+    accountType,
+    accountTypeRequired,
+    isSignedIn,
+    setLocation,
+  ]);
+
+  const send = async (
+    event: FormEvent,
+  ) => {
+    event.preventDefault();
+    setLoading(true);
+    setError("");
+
+    if (!validType) {
+      return;
+    }
+
+    try {
+      setSentTo(
+        await requestOtp(
+          name,
+          phone,
+          validType,
+          city,
+        ),
+      );
+    } catch (cause) {
+      setError(
+        cause instanceof Error
+          ? cause.message
+          : "Impossible d’envoyer le code SMS.",
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const verify = async (
+    event: FormEvent,
+  ) => {
+    event.preventDefault();
+    setLoading(true);
+    setError("");
+
+    try {
+      await confirmOtp(
+        code.replace(/\D/g, ""),
+      );
+    } catch (cause) {
+      setError(
+        cause instanceof Error
+          ? cause.message
+          : "Code incorrect. Renvoyer le code",
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const saveProfile = async (
+    event: FormEvent,
+  ) => {
+    event.preventDefault();
+    setLoading(true);
+    setError("");
+
+    try {
+      await completeProfile(
+        profileCity,
+      );
+    } catch (cause) {
+      setError(
+        cause instanceof Error
+          ? cause.message
+          : "Impossible d’enregistrer votre ville.",
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (completingProfile) {
+    return (
+      <div className="auth-shell flex min-h-[100dvh] items-center justify-center bg-[#e8ddc6] p-4">
+        <div className="auth-card w-full max-w-md rounded-[24px] bg-[#faf6ec] p-8 shadow-[0_5px_0_#e8deca]">
+          <span className="text-xs font-bold uppercase tracking-[.18em] text-[#b95740]">
+            Dernière étape
+          </span>
+
+          <h1 className="mt-3 font-display text-3xl font-bold">
+            Complétez votre profil
+          </h1>
+
+          <p className="mt-3 text-sm leading-6 text-[#676b76]">
+            Indiquez votre ville pour continuer vers l’application.
+          </p>
+
+          <form
+            onSubmit={saveProfile}
+            className="mt-7 space-y-4"
+          >
+            <label className="block text-sm font-bold">
+              Ville
+
+              <input
+                required
+                minLength={2}
+                maxLength={80}
+                value={profileCity}
+                onChange={(event) =>
+                  setProfileCity(
+                    event.target.value,
+                  )
+                }
+                data-testid="input-profile-city"
+                className="mt-2 w-full rounded-xl border border-[#d9cfbc] bg-[#f4efdf] p-3"
+              />
+            </label>
+
+            <button
+              disabled={
+                loading
+                || profileCity.trim().length < 2
+              }
+              data-testid="button-save-profile"
+              className="payloca-button w-full rounded-xl bg-[#b95740] px-5 py-3.5 font-bold text-white disabled:opacity-60"
+            >
+              {loading
+                ? "Enregistrement…"
+                : "Continuer vers PAYLOCA"}
+            </button>
+          </form>
+
+          {error && (
+            <p
+              role="alert"
+              className="mt-5 rounded-xl bg-[#fff1eb] p-3 text-center text-sm font-semibold text-[#8f3e32]"
+            >
+              {error}
+            </p>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  if (
+    !validType
+    && !isSignedIn
+  ) {
+    return <AccountTypeChooser />;
+  }
+
+  if (isSignedIn) {
+    return (
+      <div className="auth-shell flex min-h-[100dvh] items-center justify-center bg-[#e8ddc6] p-4">
+        <div className="auth-card w-full max-w-md rounded-[24px] bg-[#faf6ec] p-8 text-center shadow-[0_5px_0_#e8deca]">
+          <h1 className="font-display text-3xl font-bold">
+            Votre espace est déjà ouvert
+          </h1>
+
+          <p className="mt-3 text-sm leading-6 text-[#676b76]">
+            Vous êtes déjà connecté à PAYLOCA.
+          </p>
+
+          <Link
+            href="/"
+            className="mt-6 inline-flex rounded-xl bg-[#b95740] px-5 py-3 font-bold text-white"
+          >
+            Accéder à PAYLOCA
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  if (!configured) {
+    return (
+      <div className="auth-shell flex min-h-[100dvh] items-center justify-center bg-[#e8ddc6] p-4">
+        <div className="auth-card w-full max-w-md rounded-[24px] bg-[#faf6ec] p-8 text-center shadow-[0_5px_0_#e8deca]">
+          <h1 className="font-display text-3xl font-bold">
+            Créer votre compte PAYLOCA
+          </h1>
+
+          <p className="mt-4 text-sm leading-6 text-[#676b76]">
+            La connexion par SMS n’est pas encore configurée. Ajoutez les variables Firebase pour activer l’envoi de code.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="auth-shell flex min-h-[100dvh] items-center justify-center bg-[#e8ddc6] p-4">
+      <div className="auth-card w-full max-w-md rounded-[24px] bg-[#faf6ec] p-8 shadow-[0_5px_0_#e8deca]">
+        <Link
+          href="/sign-in"
+          className="text-xs font-bold text-[#b95740]"
+        >
+          ← Retour
+        </Link>
+
+        <p className="mt-5 text-xs font-bold uppercase tracking-[.18em] text-[#b95740]">
+          Espace utilisateur
+        </p>
+
+        <span className="mx-auto mt-4 grid size-14 place-items-center rounded-2xl bg-[#20283c] text-[#f7e8b4]">
+          <Phone />
+        </span>
+
+        <h1 className="mt-6 text-center font-display text-3xl font-bold">
+          Créer ou retrouver mon compte
+        </h1>
+
+        <p className="mt-3 text-center text-sm leading-6 text-[#676b76]">
+          Votre numéro nigérien vérifié sécurise l’accès à PAYLOCA.
+        </p>
+
+        {!sentTo ? (
+          <form
+            onSubmit={send}
+            className="mt-7 space-y-4"
+          >
+            <label className="block text-sm font-bold">
+              Nom ou prénom
+
+              <input
+                required
+                value={name}
+                onChange={(event) =>
+                  setName(event.target.value)
+                }
+                data-testid="input-auth-name"
+                className="mt-2 w-full rounded-xl border border-[#d9cfbc] bg-[#f4efdf] p-3"
+              />
+            </label>
+
+            <label className="block text-sm font-bold">
+              Ville
+
+              <input
+                required
+                minLength={2}
+                maxLength={80}
+                value={city}
+                onChange={(event) =>
+                  setCity(event.target.value)
+                }
+                data-testid="input-auth-city"
+                className="mt-2 w-full rounded-xl border border-[#d9cfbc] bg-[#f4efdf] p-3"
+              />
+            </label>
+
+            <label className="block text-sm font-bold">
+              Numéro de téléphone
+
+              <input
+                required
+                inputMode="tel"
+                value={phone}
+                onChange={(event) =>
+                  setPhone(event.target.value)
+                }
+                data-testid="input-auth-phone"
+                className="mt-2 w-full rounded-xl border border-[#d9cfbc] bg-[#f4efdf] p-3"
+              />
+            </label>
+
+            <p className="text-xs text-[#777977]">
+              Format attendu : +227 suivi de 8 chiffres.
+            </p>
+
+            <button
+              disabled={
+                loading
+                || !normalizeNigerPhone(phone)
+                || !name.trim()
+                || city.trim().length < 2
+              }
+              data-testid="button-send-otp"
+              className="payloca-button w-full rounded-xl bg-[#b95740] px-5 py-3.5 font-bold text-white disabled:opacity-60"
+            >
+              {loading
+                ? "Envoi…"
+                : "Recevoir le code par SMS"}
+            </button>
+          </form>
+        ) : (
+          <form
+            onSubmit={verify}
+            className="mt-7"
+          >
+            <p className="text-center text-sm text-[#676b76]">
+              Entrez le code reçu au {sentTo}
+            </p>
+
+            <input
+              value={code}
+              onChange={(event) =>
+                setCode(
+                  event.target.value
+                    .replace(/\D/g, "")
+                    .slice(0, 6),
+                )
+              }
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              data-testid="input-otp-code"
+              className="mt-6 w-full rounded-xl border border-[#d9cfbc] bg-[#f4efdf] p-4 text-center text-2xl font-bold tracking-[.8em]"
+              placeholder="000000"
+            />
+
+            <p className="mt-2 text-center text-xs text-[#777977]">
+              Six chiffres
+            </p>
+
+            <button
+              disabled={
+                loading
+                || code.length !== 6
+              }
+              data-testid="button-confirm-otp"
+              className="payloca-button mt-5 w-full rounded-xl bg-[#b95740] px-5 py-3.5 font-bold text-white disabled:opacity-60"
+            >
+              {loading
+                ? "Vérification…"
+                : "Valider le code"}
+            </button>
+
+            <button
+              type="button"
+              onClick={() =>
+                resendOtp().catch(() =>
+                  setError(
+                    "Impossible de renvoyer le code.",
+                  ),
+                )
+              }
+              className="mt-4 w-full text-sm font-bold text-[#b95740]"
+            >
+              Renvoyer le code
+            </button>
+          </form>
+        )}
+
+        {error && (
+          <p
+            role="alert"
+            className="mt-5 rounded-xl bg-[#fff1eb] p-3 text-center text-sm font-semibold text-[#8f3e32]"
+          >
+            {error}
+          </p>
+        )}
+
+        <div id="firebase-recaptcha" />
+      </div>
+    </div>
+  );
+}
+
+function ProtectedMessagesPage() {
+  return (
+    <AuthGate>
+      <MessagesPage />
+    </AuthGate>
+  );
+}
+
+function ProtectedPublishPage() {
+  const {
+    membership,
+    membershipLoading,
+    membershipError,
+    membershipConfirmed,
+    accountType,
+  } = usePaylocaAuth();
+
+  if (accountType === null) {
+    return (
+      <AuthGate>
+        <PublishPage />
+      </AuthGate>
+    );
+  }
+
+  if (accountType !== "agency") {
+    return (
+      <Shell>
+        <section className="page-shell flex min-h-[60vh] items-center justify-center py-12">
+          <div className="max-w-md rounded-[25px] border border-[#e4bbb0] bg-[#fff1eb] p-7 text-center shadow-[0_5px_0_#e8deca]">
+            <h1 className="font-display text-3xl font-bold text-[#8f3e32]">
+              Espace agence requis
+            </h1>
+
+            <p className="mt-3 text-sm leading-6 text-[#8f3e32]">
+              La publication et la gestion des annonces sont réservées aux agences et propriétaires.
+            </p>
+
+            <Link
+              href="/espace-agence"
+              className="mt-6 inline-flex rounded-xl bg-[#b95740] px-4 py-3 text-sm font-bold text-white"
+            >
+              Voir l’espace agence
+            </Link>
+          </div>
+        </section>
+      </Shell>
+    );
+  }
+
+  if (
+    membershipLoading
+    && !membershipConfirmed
+  ) {
+    return (
+      <Shell>
+        <section className="page-shell py-20 text-center text-sm text-[#676b76]">
+          Vérification de vos droits d’accès…
+        </section>
+      </Shell>
+    );
+  }
+
+  if (
+    membershipError
+    && !membershipConfirmed
+  ) {
+    return (
+      <Shell>
+        <section className="page-shell py-20 text-center text-sm text-[#8f3e32]">
+          {membershipError}
+        </section>
+      </Shell>
+    );
+  }
+
+  if (
+    membership.status === "LECTURE_GRATUITE"
+  ) {
+    return (
+      <Shell>
+        <section className="page-shell flex min-h-[60vh] items-center justify-center py-12">
+          <div className="max-w-md rounded-[25px] border border-[#e4bbb0] bg-[#fff1eb] p-7 text-center shadow-[0_5px_0_#e8deca]">
+            <h1 className="font-display text-3xl font-bold text-[#8f3e32]">
+              Passez à l’action
+            </h1>
+
+            <p className="mt-3 text-sm leading-6 text-[#8f3e32]">
+              Votre essai VIP est terminé. Pour publier, choisissez un abonnement.
+            </p>
+
+            <div className="mt-6 grid gap-2">
+              <Link
+                href="/abonnement"
+                className="rounded-xl bg-[#b95740] px-4 py-3 text-sm font-bold text-white"
+              >
+                Standard gratuit
+              </Link>
+
+              <Link
+                href="/abonnement"
+                className="rounded-xl bg-[#20283c] px-4 py-3 text-sm font-bold text-[#f7e8b4]"
+              >
+                VIP Bronze ou VIP Or
+              </Link>
+
+              <Link
+                href="/annonces"
+                className="rounded-xl border border-[#d9cfbc] px-4 py-3 text-sm font-bold text-[#596071]"
+              >
+                Continuer à regarder gratuitement
+              </Link>
+            </div>
+          </div>
+        </section>
+      </Shell>
+    );
+  }
+
+  return (
+    <AuthGate>
+      <PublishPage />
+    </AuthGate>
+  );
+},
+       function AccountSpacePage({
+  expected,
+}: {
+  expected: AccountType;
+}) {
+  const {
+    isLoaded,
+    isSignedIn,
+    accountType,
+    accountTypeLoading,
+    accountTypeRequired,
+  } = usePaylocaAuth();
+
+  if (!isLoaded) {
+    return (
+      <Shell>
+        <section className="page-shell py-20 text-center text-sm text-[#676b76]">
+          Chargement de votre session…
+        </section>
+      </Shell>
+    );
+  }
+
+  if (!isSignedIn) {
+    return (
+      <AuthGate>
+        <AccountSpacePage expected={expected} />
+      </AuthGate>
+    );
+  }
+
+  if (
+    accountTypeLoading
+    && accountType === null
+  ) {
+    return (
+      <Shell>
+        <section className="page-shell py-20 text-center text-sm text-[#676b76]">
+          Chargement de votre espace…
+        </section>
+      </Shell>
+    );
+  }
+
+  if (
+    accountType === null
+    || accountTypeRequired
+  ) {
+    return <SignInPage />;
+  }
+
+  if (accountType !== expected) {
+    return (
+      <Shell>
+        <section className="page-shell flex min-h-[60vh] items-center justify-center py-12">
+          <div className="max-w-md rounded-[25px] border border-[#e4bbb0] bg-[#fff1eb] p-7 text-center shadow-[0_5px_0_#e8deca]">
+            <h1 className="font-display text-3xl font-bold text-[#8f3e32]">
+              Cet espace n’est pas le vôtre
+            </h1>
+
+            <p className="mt-3 text-sm leading-6 text-[#8f3e32]">
+              Votre compte est configuré comme{" "}
+              {accountType === "agency"
+                ? "agence / propriétaire"
+                : accountType === "ong"
+                  ? "ONG"
+                  : "utilisateur"}.
+            </p>
+
+            <Link
+              href={
+                accountType === "agency"
+                  ? "/espace-agence"
+                  : accountType === "ong"
+                    ? "/espace-ong"
+                    : "/"
+              }
+              className="mt-6 inline-flex rounded-xl bg-[#b95740] px-4 py-3 text-sm font-bold text-white"
+            >
+              Ouvrir mon espace
+            </Link>
+          </div>
+        </section>
+      </Shell>
+    );
+  }
+
+  if (expected === "agency") {
+    return (
+      <Shell>
+        <section className="page-shell py-10 md:py-16">
+          <span className="text-xs font-bold uppercase tracking-[.18em] text-[#b95740]">
+            Espace agence / propriétaire
+          </span>
+
+          <h1 className="mt-2 font-display text-5xl font-bold tracking-[-.05em]">
+            Gérez vos biens avec clarté.
+          </h1>
+
+          <p className="mt-4 max-w-2xl text-base leading-7 text-[#676b76]">
+            Publiez vos maisons et boutiques, présentez votre profil professionnel et suivez uniquement les données disponibles sur votre compte.
+          </p>
+
+          <div className="mt-9 grid gap-4 md:grid-cols-3">
+            <Link
+              href="/publier"
+              className="rounded-[22px] border border-[#dfd7c4] bg-[#faf6ec] p-5 shadow-[0_5px_0_#e8deca] transition-transform hover:-translate-y-1"
+            >
+              <span className="text-2xl">
+                ＋
+              </span>
+
+              <h2 className="mt-4 font-display text-2xl font-bold">
+                Publier un bien
+              </h2>
+
+              <p className="mt-2 text-sm leading-6 text-[#676b76]">
+                Ajoutez une annonce avec photo et contact nigérien validés.
+              </p>
+            </Link>
+
+            <Link
+              href="/boutique"
+              className="rounded-[22px] border border-[#dfd7c4] bg-[#faf6ec] p-5 shadow-[0_5px_0_#e8deca] transition-transform hover:-translate-y-1"
+            >
+              <span className="text-2xl">
+                ▦
+              </span>
+
+              <h2 className="mt-4 font-display text-2xl font-bold">
+                Profil professionnel
+              </h2>
+
+              <p className="mt-2 text-sm leading-6 text-[#676b76]">
+                Présentez votre agence ou votre activité sans faux badge ni chiffre inventé.
+              </p>
+            </Link>
+
+            <Link
+              href="/emplois"
+              className="rounded-[22px] border border-[#dfd7c4] bg-[#faf6ec] p-5 shadow-[0_5px_0_#e8deca] transition-transform hover:-translate-y-1"
+            >
+              <span className="text-2xl">
+                ⌁
+              </span>
+
+              <h2 className="mt-4 font-display text-2xl font-bold">
+                Emploi
+              </h2>
+
+              <p className="mt-2 text-sm leading-6 text-[#676b76]">
+                Gérez vos offres et consultez les candidatures de vos offres.
+              </p>
+            </Link>
+          </div>
+
+          <div className="mt-8 rounded-[22px] border border-[#cfe1d0] bg-[#eef7ed] p-5 text-sm leading-6 text-[#267158]">
+            <strong>
+              Données réelles uniquement.
+            </strong>{" "}
+            Les statistiques et vérifications s’afficheront lorsqu’elles seront disponibles sur votre compte.
+          </div>
+        </section>
+      </Shell>
+    );
+  }
+
+  if (expected === "ong") {
+    return (
+      <Shell>
+        <section className="page-shell py-10 md:py-16">
+          <span className="text-xs font-bold uppercase tracking-[.18em] text-[#267158]">
+            Espace ONG
+          </span>
+
+          <h1 className="mt-2 font-display text-5xl font-bold tracking-[-.05em]">
+            Votre action, sans chiffres inventés.
+          </h1>
+
+          <p className="mt-4 max-w-2xl text-base leading-7 text-[#676b76]">
+            Présentez votre organisation et vos activités après validation. PAYLOCA n’affiche aucun impact ou badge tant qu’une donnée n’a pas été vérifiée.
+          </p>
+
+          <div className="mt-9 rounded-[24px] border border-[#dfd7c4] bg-[#faf6ec] p-6 shadow-[0_5px_0_#e8deca]">
+            <h2 className="font-display text-2xl font-bold">
+              Activités validées
+            </h2>
+
+            <p className="mt-3 text-sm leading-6 text-[#676b76]">
+              Aucune activité validée n’est encore disponible pour ce compte.
+            </p>
+
+            <button
+              type="button"
+              disabled
+              className="mt-6 rounded-xl border border-[#d9cfbc] px-5 py-3 text-sm font-bold text-[#8a8984]"
+            >
+              Créer une activité · validation requise
+            </button>
+          </div>
+        </section>
+      </Shell>
+    );
+  }
+
+  return (
+    <Shell>
+      <section className="page-shell py-10 md:py-16">
+        <span className="text-xs font-bold uppercase tracking-[.18em] text-[#b95740]">
+          Espace utilisateur
+        </span>
+
+        <h1 className="mt-2 font-display text-5xl font-bold tracking-[-.05em]">
+          Tout PAYLOCA au même endroit.
+        </h1>
+
+        <p className="mt-4 max-w-2xl text-base leading-7 text-[#676b76]">
+          Recherchez des annonces, gardez vos favoris, échangez avec les propriétaires et participez à la communauté.
+        </p>
+
+        <div className="mt-9 grid gap-4 md:grid-cols-3">
+          <Link
+            href="/annonces"
+            className="rounded-[22px] border border-[#dfd7c4] bg-[#faf6ec] p-5 shadow-[0_5px_0_#e8deca]"
+          >
+            <h2 className="font-display text-2xl font-bold">
+              Les annonces
+            </h2>
+
+            <p className="mt-2 text-sm leading-6 text-[#676b76]">
+              Voir les biens actuellement disponibles.
+            </p>
+          </Link>
+
+          <Link
+            href="/favoris"
+            className="rounded-[22px] border border-[#dfd7c4] bg-[#faf6ec] p-5 shadow-[0_5px_0_#e8deca]"
+          >
+            <h2 className="font-display text-2xl font-bold">
+              Mes favoris
+            </h2>
+
+            <p className="mt-2 text-sm leading-6 text-[#676b76]">
+              Retrouver vos sélections sur cet appareil.
+            </p>
+          </Link>
+
+          <Link
+            href="/messages"
+            className="rounded-[22px] border border-[#dfd7c4] bg-[#faf6ec] p-5 shadow-[0_5px_0_#e8deca]"
+          >
+            <h2 className="font-display text-2xl font-bold">
+              Messages
+            </h2>
+
+            <p className="mt-2 text-sm leading-6 text-[#676b76]">
+              Échanger sans sortir de PAYLOCA.
+            </p>
+          </Link>
+        </div>
+
+        <UserFunPanel />
+      </section>
+    </Shell>
+  );
+}
+
+function Router() {
+  const [location] =
+    useLocation();
+
+  const {
+    isLoaded,
+    isSignedIn,
+    accountTypeRequired,
+  } = usePaylocaAuth();
+
+  const isAuthRoute =
+    location.startsWith("/sign-in")
+    || location.startsWith("/sign-up");
+
+  if (location.startsWith("/sign-in")) {
+    return <SignInPage />;
+  }
+
+  if (location.startsWith("/sign-up")) {
+    return <SignInPage />;
+  }
+
+  if (!isLoaded) {
+    return (
+      <div className="auth-shell flex min-h-[100dvh] items-center justify-center bg-[#e8ddc6] p-5">
+        <div className="w-full max-w-md rounded-[28px] bg-[#faf6ec] p-8 text-center shadow-[0_5px_0_#e8deca]">
+          <p className="text-xs font-bold uppercase tracking-[.18em] text-[#b95740]">
+            PAYLOCA
+          </p>
+
+          <h1 className="mt-3 font-display text-3xl font-bold">
+            Préparation de votre compte…
+          </h1>
+
+          <p className="mt-3 text-sm leading-6 text-[#676b76]">
+            Vérification de votre session sécurisée.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (
+    isSignedIn
+    && accountTypeRequired
+    && !isAuthRoute
+  ) {
+    return <SignInPage />;
+  }
+
+  if (
+    location.startsWith(
+      "/espace-agence",
+    )
+  ) {
+    return (
+      <ErrorBoundary resetKey={location}>
+        <AccountSpacePage expected="agency" />
+      </ErrorBoundary>
+    );
+  }
+
+  if (
+    location.startsWith("/espace-ong")
+  ) {
+    return (
+      <ErrorBoundary resetKey={location}>
+        <AccountSpacePage expected="ong" />
+      </ErrorBoundary>
+    );
+  }
+
+  if (
+    location.startsWith(
+      "/espace-utilisateur",
+    )
+  ) {
+    return (
+      <ErrorBoundary resetKey={location}>
+        <AccountSpacePage expected="user" />
+      </ErrorBoundary>
+    );
+  }
+
+  if (
+    location.startsWith("/messages")
+  ) {
+    return (
+      <ErrorBoundary resetKey={location}>
+        <ProtectedMessagesPage />
+      </ErrorBoundary>
+    );
+  }
+
+  if (
+    location.startsWith("/services")
+  ) {
+    return (
+      <ErrorBoundary resetKey={location}>
+        <Shell>
+          <ServicesPage />
+        </Shell>
+      </ErrorBoundary>
+    );
+  }
+
+  if (
+    location.startsWith("/emplois")
+  ) {
+    return (
+      <ErrorBoundary resetKey={location}>
+        <Shell>
+          <JobsPage />
+        </Shell>
+      </ErrorBoundary>
+    );
+  }
+
+  if (
+    location === "/boutique"
+    || location.startsWith("/boutique?")
+  ) {
+    return (
+      <ErrorBoundary resetKey={location}>
+        <AccountTypeGate allowed={["agency"]}>
+          <Shell>
+            <SellerProfilePage />
+          </Shell>
+        </AccountTypeGate>
+      </ErrorBoundary>
+    );
+  }
+
+  if (location.startsWith("/profil/")) {
+    const userId =
+      decodeURIComponent(
+        location
+          .slice("/profil/".length)
+          .split(/[/?#]/)[0] ?? "",
+      );
+
+    return (
+      <ErrorBoundary resetKey={location}>
+        <Shell>
+          <SellerProfilePage userId={userId} />
+        </Shell>
+      </ErrorBoundary>
+    );
+  }
+
+  if (location.startsWith("/fil")) {
+    return (
+      <ErrorBoundary resetKey={location}>
+        <AuthGate>
+          <Shell>
+            <FunPage />
+          </Shell>
+        </AuthGate>
+      </ErrorBoundary>
+    );
+  }
+
+  if (
+    location.startsWith("/recherche")
+  ) {
+    return (
+      <ErrorBoundary resetKey={location}>
+        <Shell>
+          <SearchPage />
+        </Shell>
+      </ErrorBoundary>
+    );
+  }
+
+  if (location.startsWith("/sos")) {
+    return (
+      <ErrorBoundary resetKey={location}>
+        <Shell>
+          <SosPage />
+        </Shell>
+      </ErrorBoundary>
+    );
+  }
+
+  if (
+    location.startsWith(
+      "/ligue-payloca",
+    )
+  ) {
+    return (
+      <ErrorBoundary resetKey={location}>
+        <LeaguePage />
+      </ErrorBoundary>
+    );
+  }
+
+  if (location.startsWith("/appels")) {
+    return (
+      <ErrorBoundary resetKey={location}>
+        <CallsPage />
+      </ErrorBoundary>
+    );
+  }
+
+  if (
+    location.startsWith("/parrainage")
+    || location.startsWith("/invite/")
+  ) {
+    return (
+      <ErrorBoundary resetKey={location}>
+        <ReferralPage />
+      </ErrorBoundary>
+    );
+  }
+
+  if (location.startsWith("/aide")) {
+    return (
+      <ErrorBoundary resetKey={location}>
+        <HelpPage />
+      </ErrorBoundary>
+    );
+  }
+
+  if (
+    location.startsWith("/stories")
+  ) {
+    return (
+      <ErrorBoundary resetKey={location}>
+        <StoriesPage />
+      </ErrorBoundary>
+    );
+  }
+
+  if (location.startsWith("/famille")) {
+    return (
+      <ErrorBoundary resetKey={location}>
+        <FamilyPage />
+      </ErrorBoundary>
+    );
+  }
+
+  if (
+    location.startsWith(
+      "/parametres-famille",
+    )
+  ) {
+    return (
+      <ErrorBoundary resetKey={location}>
+        <FamilySettingsPage />
+      </ErrorBoundary>
+    );
+  }
+
+  if (
+    location.startsWith(
+      "/controle-parental",
+    )
+  ) {
+    return (
+      <ErrorBoundary resetKey={location}>
+        <ParentalControlPage />
+      </ErrorBoundary>
+    );
+  }
+
+  if (
+    location.startsWith("/chat-famille")
+  ) {
+    return (
+      <ErrorBoundary resetKey={location}>
+        <FamilyChatPage />
+      </ErrorBoundary>
+    );
+  }
+
+  if (
+    location.startsWith("/abonnement")
+  ) {
+    return (
+      <ErrorBoundary resetKey={location}>
+        <PaylocaPlansPage />
+      </ErrorBoundary>
+    );
+  }
+
+  if (location === "/") {
+    return (
+      <ErrorBoundary resetKey={location}>
+        <Home />
+      </ErrorBoundary>
+    );
+  }
+
+  if (location === "/annonces") {
+    return (
+      <ErrorBoundary resetKey={location}>
+        <ListingsPage />
+      </ErrorBoundary>
+    );
+  }
+
+  if (
+    location.startsWith("/annonces/")
+  ) {
+    return (
+      <ErrorBoundary resetKey={location}>
+        <DetailPage />
+      </ErrorBoundary>
+    );
+  }
+
+  if (
+    location.startsWith("/favoris")
+  ) {
+    return (
+      <ErrorBoundary resetKey={location}>
+        <AuthGate>
+          <FavoritesPage />
+        </AuthGate>
+      </ErrorBoundary>
+    );
+  }
+
+  if (
+    location.startsWith("/publier")
+  ) {
+    return (
+      <ErrorBoundary resetKey={location}>
+        <AuthGate>
+          <ProtectedPublishPage />
+        </AuthGate>
+      </ErrorBoundary>
+    );
+  }
+
+  if (
+    location.startsWith(
+      "/confidentialite",
+    )
+  ) {
+    return (
+      <ErrorBoundary resetKey={location}>
+        <InfoPage
+          title="Politique de confidentialité"
+          eyebrow="Vos données, votre confiance"
+        >
+          <p>
+            PAYLOCA utilise les informations nécessaires à votre compte et à vos annonces. Les publications du fil, leur auteur, leur communauté et leur ville sont publiques.
+          </p>
+
+          <p className="mt-4">
+            Vos contacts SOS restent uniquement dans le stockage local de cet appareil, séparés par compte connecté. PAYLOCA ne les envoie pas à son serveur. Votre position n’est demandée qu’après votre consentement lors de la préparation d’un message SOS.
+          </p>
+
+          <p className="mt-6 font-semibold text-[#20283c]">
+            Dernière mise à jour 28 août 2026.
+          </p>
+        </InfoPage>
+      </ErrorBoundary>
+    );
+  }
+
+  return (
+    <ErrorBoundary resetKey={location}>
+      <Switch>
+        <Route
+          path="/"
+          component={Home}
+        />
+
+        <Route
+          path="/annonces"
+          component={ListingsPage}
+        />
+
+        <Route
+          path="/annonces/:id"
+          component={DetailPage}
+        />
+
+        <Route
+          path="/publier"
+          component={ProtectedPublishPage}
+        />
+
+        <Route
+          path="/favoris"
+          component={FavoritesPage}
+        />
+
+        <Route
+          path="/parametres"
+          component={SettingsPage}
+        />
+
+        <Route path="/confidentialite">
+          <InfoPage
+            title="Politique de confidentialité"
+            eyebrow="Vos données, votre confiance"
+          >
+            <p>
+              PAYLOCA utilise les informations nécessaires à votre compte et à vos annonces. Les publications du fil, leur auteur, leur communauté et leur ville sont publiques. Vos contacts SOS restent uniquement dans le stockage local de cet appareil, séparés par compte connecté. PAYLOCA ne les envoie pas à son serveur.
+            </p>
+
+            <p className="mt-4">
+              Votre position n’est demandée qu’après votre consentement lors de la préparation d’un message SOS. Elle sert alors à préparer un lien dans le SMS ; PAYLOCA n’envoie pas le message automatiquement et ne contacte pas les secours.
+            </p>
+
+            <p className="mt-6 font-semibold text-[#20283c]">
+              Dernière mise à jour 26 août 2026.
+            </p>
+          </InfoPage>
+        </Route>
+
+        <Route path="/conditions">
+          <InfoPage
+            title="Conditions d'utilisation"
+            eyebrow="Les règles de Payloca"
+          >
+            <p>
+              En utilisant PAYLOCA, vous acceptez de publier uniquement des contenus et des biens légaux.
+            </p>
+
+            <p>
+              PAYLOCA n’est pas responsable des transactions conclues entre utilisateurs.
+            </p>
+
+            <p>
+              Tout litige doit être réglé entre les parties concernées.
+            </p>
+          </InfoPage>
+        </Route>
+
+        <Route
+          path="/a-propos"
+          component={AboutPage}
+        />
+
+        <Route component={NotFound} />
+      </Switch>
+    </ErrorBoundary>
+  );
+}
+
+function AppContent() {
+  const [location, setLocation] =
+    useLocation();
+
+  const { isSignedIn } =
+    usePaylocaAuth();
+
+  useEffect(() => {
+    const handleOnline = () =>
+      (document.body.dataset.offline =
+        "false");
+
+    const handleOffline = () =>
+      (document.body.dataset.offline =
+        "true");
+
+    window.addEventListener(
+      "online",
+      handleOnline,
+    );
+
+    window.addEventListener(
+      "offline",
+      handleOffline,
+    );
+
+    return () => {
+      window.removeEventListener(
+        "online",
+        handleOnline,
+      );
+
+      window.removeEventListener(
+        "offline",
+        handleOffline,
+      );
+    };
+  }, []);
+
+  const isAuthRoute =
+    location.startsWith("/sign-in")
+    || location.startsWith("/sign-up");
+
+  return (
+    <QueryClientProvider
+      client={queryClient}
+    >
+      <TooltipProvider>
+        <Router />
+
+        <NotificationBootstrap />
+
+        {isSignedIn
+          && !isAuthRoute
+          && <Onboarding />}
+
+        <Toaster />
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+}
+
+function App() {
+  return (
+    <WouterRouter base={basePath}>
+      <FirebaseAuthProvider>
+        <AppContent />
+      </FirebaseAuthProvider>
+    </WouterRouter>
+  );
+}
+
+export default App; 
 
