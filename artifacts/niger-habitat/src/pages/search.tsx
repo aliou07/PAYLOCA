@@ -97,4 +97,34 @@ export default function SearchPage() {
               <div className="mt-4 grid gap-4 md:grid-cols-2">
                 {result.profiles.map((profile) => (
                   <article key={profile.userId} className="flex items-center gap-4 rounded-2xl border border-[#dfd7c4] bg-[#faf6ec] p-4 shadow-[0_3px_0_#e8deca]">
-                    <Link href={`/profil/${encodeURIComponent(profile.userId)}`} className="grid size-14 shrink-0 place-items-center overflow-hidden rounded-2xl bg-[#e8ddc6] text-lg font-bold text-[#596071]">
+                    <Link href={`/profil/${encodeURIComponent(profile.userId)}`} className="grid size-14 shrink-0 place-items-center overflow-hidden rounded-2xl bg-[#e8ddc6] text-lg font-bold text-[#596071]">                      {profile.avatarUrl ? <img src={imageSource(profile.avatarUrl)} alt="" className="size-full object-cover" /> : profile.displayName.slice(0, 2).toUpperCase()}
+                    </Link>
+                    <div className="min-w-0 flex-1">
+                      <Link href={`/profil/${encodeURIComponent(profile.userId)}`} className="block truncate font-bold text-[#20283c] hover:text-[#b95740]">{profile.displayName}</Link>
+                      <p className="mt-1 truncate text-xs font-medium text-[#777977]">{profile.city}{profile.bio ? ` · ${profile.bio}` : ""}</p>
+                    </div>
+                    <FollowButton profile={profile} />
+                  </article>
+                ))}
+              </div>
+            ) : <p className="mt-3 rounded-xl border border-dashed border-[#d9cfbc] p-5 text-sm text-[#676b76]">Aucun profil public ne correspond à cette recherche.</p>}
+          </section>
+
+          <section>
+            <div className="flex items-center gap-2"><Hash size={18} className="text-[#b95740]" /><h2 className="font-display text-2xl font-bold">Publications</h2><span className="text-sm text-[#777977]">({result.posts.length})</span></div>
+            {result.posts.length > 0 ? (
+              <div className="mt-4 space-y-4">
+                {result.posts.map((post) => (
+                  <article key={post.id} className="overflow-hidden rounded-2xl border border-[#dfd7c4] bg-[#faf6ec] shadow-[0_3px_0_#e8deca]">
+                    <div className="flex items-center justify-between border-b border-[#e7dfcf] p-4"><div><p className="font-bold text-[#20283c]">{post.authorName}</p><span className="text-xs text-[#777977]">{post.community} · {post.city}</span></div><span className="rounded-full bg-[#f0dfae] px-3 py-1.5 text-xs font-bold text-[#685523]">{post.category}</span></div>
+                    <p className="px-5 py-6 text-base font-medium leading-relaxed text-[#20283c]">{post.caption}</p>
+                  </article>
+                ))}
+              </div>
+            ) : <p className="mt-3 rounded-xl border border-dashed border-[#d9cfbc] p-5 text-sm text-[#676b76]">Aucune publication ne correspond à cette recherche.</p>}
+          </section>
+        </div>
+      )}
+    </div>
+  );
+}
