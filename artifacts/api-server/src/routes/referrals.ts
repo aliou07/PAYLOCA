@@ -1,4 +1,7 @@
-import { Router, type IRouter } from "express";
+import {
+  Router,
+  type IRouter,
+} from "express";
 import {
   ClaimReferralBody,
   ClaimReferralResponse,
@@ -12,7 +15,9 @@ import {
   claimReferralCode,
   getReferralStats,
 } from "../lib/referrals";
+
 const router: IRouter = Router();
+
 router.get(
   "/referrals",
   requireAuth,
@@ -20,9 +25,10 @@ router.get(
     try {
       const authenticated =
         req as AuthenticatedRequest;
-      const origin = `${req.protocol}://${req.get(
-        "host",
-      )}`;
+
+      const origin =
+        `${req.protocol}://${req.get("host")}`;
+
       res.json(
         GetReferralStatsResponse.parse(
           await getReferralStats(
@@ -39,13 +45,16 @@ router.get(
     }
   },
 );
+
 router.post(
   "/referrals/claim",
   requireAuth,
   async (req, res): Promise<void> => {
-    const parsed = ClaimReferralBody.safeParse(
-      req.body,
-    );
+    const parsed =
+      ClaimReferralBody.safeParse(
+        req.body,
+      );
+
     if (!parsed.success) {
       res.status(400).json({
         error:
@@ -53,16 +62,23 @@ router.post(
       });
       return;
     }
+
     try {
-      const result = await claimReferralCode(
-        (req as AuthenticatedRequest).userId,
-        parsed.data.code,
-      );
+      const result =
+        await claimReferralCode(
+          (
+            req as AuthenticatedRequest
+          ).userId,
+          parsed.data.code,
+        );
+
       res.status(201).json(
         ClaimReferralResponse.parse({
           ...result.stats,
-          referrerWeeks: result.referrerWeeks,
-          referredWeeks: result.referredWeeks,
+          referrerWeeks:
+            result.referrerWeeks,
+          referredWeeks:
+            result.referredWeeks,
         }),
       );
     } catch (error) {
@@ -70,15 +86,18 @@ router.post(
         error instanceof Error
           ? error.message
           : "Impossible de réclamer ce code.";
+
       const status =
-        message.includes("déjà") ||
-        message.includes("propre")
+        message.includes("déjà")
+        || message.includes("propre")
           ? 409
           : 400;
+
       res.status(status).json({
         error: message,
       });
     }
   },
 );
+
 export default router;
