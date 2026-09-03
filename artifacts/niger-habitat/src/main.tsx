@@ -1,32 +1,19 @@
-import { createRoot } from "react-dom/client";
+import { createRoot } from 'react-dom/client';
 
-import App from "./App";
-import { ErrorBoundary } from "@/components/error-boundary";
-import {
-  registerPaylocaServiceWorker,
-} from "@/lib/firebase";
+import App from './App';
+import { ErrorBoundary } from '@/components/error-boundary';
+import { registerPaylocaServiceWorker } from '@/lib/firebase';
 
-import "./index.css";
+import './index.css';
 
-registerPaylocaServiceWorker()
-  .catch(() => undefined);
+registerPaylocaServiceWorker().catch(() => undefined);
 
-createRoot(
-  document.getElementById("root")!,
-  {
-    // Keeps caught errors off reportError(),
-    // which would raise the dev overlay.
-    onCaughtError: (
-      error,
-      errorInfo,
-    ) => {
-      console.error(
-        error,
-        errorInfo.componentStack,
-      );
-    },
+createRoot(document.getElementById('root')!, {
+  // Keeps caught errors off reportError(), which would raise the dev overlay.
+  onCaughtError: (error, errorInfo) => {
+    console.error(error, errorInfo.componentStack);
   },
-).render(
+}).render(
   <ErrorBoundary>
     <App />
   </ErrorBoundary>,
