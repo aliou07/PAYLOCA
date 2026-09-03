@@ -1,0 +1,25 @@
+{
+  "name": "PAYLOCA",
+  "short_name": "PAYLOCA",
+  "description": "Louer, publier et discuter de maisons et boutiques au Niger.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#f4efdf",
+  "theme_color": "#0877d1",
+  "icons": [
+    {
+      "src": "/payloca-app-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/payloca-app-icon.jpeg",
+      "sizes": "498x1080",
+      "type": "image/jpeg",
+      "purpose": "any"
+    }
+  ]
+}
