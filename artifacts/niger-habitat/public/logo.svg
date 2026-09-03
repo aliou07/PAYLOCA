@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 96" role="img" aria-labelledby="title">
+  <title>PAYLOCA</title>
+  <rect width="360" height="96" rx="24" fill="#20283c"/>
+  <path d="M32 68V28h17c13 0 21 7 21 19s-8 20-21 20h-7v11H32Zm10-20h7c7 0 11-3 11-9s-4-9-11-9h-7v18Zm34 20 17-40h10l17 40h-11l-3-8H89l-3 8H75Zm18-17h9l-4-12-5 12Zm34 17V52L113 28h12l8 14 9-14h12l-16 24v16h-10Zm43 0V28h10v31h19v9h-29Zm34 0V28h10v40h-10Zm34 0V28h10l19 24V28h10v40h-10l-19-24v24h-10Z" fill="#fff7e8"/>
+</svg>
