@@ -16,7 +16,9 @@ import streaksRouter from "./streaks";
 import funRouter from "./fun";
 import giftsRouter from "./gifts";
 import referralsRouter from "./referrals";
+
 const router: IRouter = Router();
+
 router.use(healthRouter);
 router.use(annoncesRouter);
 router.use(messagingRouter);
@@ -34,4 +36,5 @@ router.use(streaksRouter);
 router.use(funRouter);
 router.use(giftsRouter);
 router.use(referralsRouter);
+
 export default router;
