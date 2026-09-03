@@ -41,8 +41,10 @@ import {
   type AuthenticatedRequest,
 } from "../middlewares/requireAuth";
 import { ObjectStorageService } from "../lib/objectStorage";
+
 const router: IRouter = Router();
 const storage = new ObjectStorageService();
+
 function validStoragePath(
   value?: string,
 ): string | null {
@@ -51,30 +53,53 @@ function validStoragePath(
     ? value
     : "";
 }
+
 async function getPublicSellerProfile(
   userId: string,
 ) {
   const [profile] = await db
     .select()
     .from(sellerProfilesTable)
-    .where(eq(sellerProfilesTable.userId, userId))
+    .where(
+      eq(
+        sellerProfilesTable.userId,
+        userId,
+      ),
+    )
     .limit(1);
+
   if (!profile) return null;
+
   const [shop] = await db
     .select()
     .from(sellerShopsTable)
-    .where(eq(sellerShopsTable.ownerId, userId))
+    .where(
+      eq(
+        sellerShopsTable.ownerId,
+        userId,
+      ),
+    )
     .limit(1);
+
   const listings = await db
     .select()
     .from(listingsTable)
     .where(
       and(
-        eq(listingsTable.ownerId, userId),
-        eq(listingsTable.status, "libre"),
+        eq(
+          listingsTable.ownerId,
+          userId,
+        ),
+        eq(
+          listingsTable.status,
+          "libre",
+        ),
       ),
     )
-    .orderBy(desc(listingsTable.createdAt));
+    .orderBy(
+      desc(listingsTable.createdAt),
+    );
+
   return {
     profile,
     shop: shop
@@ -93,20 +118,32 @@ async function getPublicSellerProfile(
     listings,
   };
 }
+
 async function isOwnedImage(
   userId: string,
   objectPath: string | null,
 ): Promise<boolean> {
   if (!objectPath) return true;
+
   const [image] = await db
     .select()
     .from(storedImagesTable)
     .where(
       and(
-        eq(storedImagesTable.objectPath, objectPath),
-        eq(storedImagesTable.ownerId, userId),
-        isNull(storedImagesTable.listingId),
-        isNull(storedImagesTable.conversationId),
+        eq(
+          storedImagesTable.objectPath,
+          objectPath,
+        ),
+        eq(
+          storedImagesTable.ownerId,
+          userId,
+        ),
+        isNull(
+          storedImagesTable.listingId,
+        ),
+        isNull(
+          storedImagesTable.conversationId,
+        ),
         or(
           isNull(
             storedImagesTable.sellerProfileOwnerId,
@@ -119,17 +156,26 @@ async function isOwnedImage(
       ),
     )
     .limit(1);
+
   return Boolean(
-    image &&
-      (await storage.verifyImage(objectPath, image)),
+    image
+    && await storage.verifyImage(
+      objectPath,
+      image,
+    ),
   );
 }
+
 async function ensureSellerProfile(
   req: AuthenticatedRequest,
 ) {
   const userId = req.userId;
   const displayName =
-    await getAuthenticatedUserName(userId, req);
+    await getAuthenticatedUserName(
+      userId,
+      req,
+    );
+
   await db
     .insert(sellerProfilesTable)
     .values({
@@ -140,6 +186,7 @@ async function ensureSellerProfile(
       verificationStatus: "unverified",
     })
     .onConflictDoNothing();
+
   await db
     .insert(sellerShopsTable)
     .values({
@@ -150,80 +197,124 @@ async function ensureSellerProfile(
     })
     .onConflictDoNothing();
 }
+
 router.get(
   "/seller-profiles/:userId",
   async (req, res): Promise<void> => {
-    const params = GetSellerProfileParams.safeParse(
-      req.params,
-    );
+    const params =
+      GetSellerProfileParams.safeParse(
+        req.params,
+      );
+
     if (!params.success) {
       res.status(400).json({
         error: "Profil invalide.",
       });
       return;
     }
-    const result = await getPublicSellerProfile(
-      params.data.userId,
-    );
+
+    const result =
+      await getPublicSellerProfile(
+        params.data.userId,
+      );
+
     if (!result) {
       res.status(404).json({
-        error: "Profil vendeur introuvable.",
+        error:
+          "Profil vendeur introuvable.",
       });
       return;
     }
+
     res.json(
-      GetSellerProfileResponse.parse(result),
+      GetSellerProfileResponse.parse(
+        result,
+      ),
     );
   },
 );
+
 router.get(
   "/seller-profile/me",
   requireAuth,
   async (req, res): Promise<void> => {
-    if (!requireAccountType(req, res, ["agency"])) {
+    if (
+      !requireAccountType(
+        req,
+        res,
+        ["agency"],
+      )
+    ) {
       return;
     }
+
     const authenticated =
       req as AuthenticatedRequest;
-    await ensureSellerProfile(authenticated);
-    const result = await getPublicSellerProfile(
-      authenticated.userId,
+
+    await ensureSellerProfile(
+      authenticated,
     );
+
+    const result =
+      await getPublicSellerProfile(
+        authenticated.userId,
+      );
+
     res.json(
-      GetMySellerProfileResponse.parse(result),
+      GetMySellerProfileResponse.parse(
+        result,
+      ),
     );
   },
 );
+
 router.put(
   "/seller-profile/me",
   requireAuth,
   async (req, res): Promise<void> => {
-    if (!requireAccountType(req, res, ["agency"])) {
+    if (
+      !requireAccountType(
+        req,
+        res,
+        ["agency"],
+      )
+    ) {
       return;
     }
+
     const body =
       UpdateMySellerProfileBody.safeParse(
         req.body,
       );
+
     if (!body.success) {
       res.status(400).json({
         error: body.error.message,
       });
       return;
     }
-    const avatarUrl = validStoragePath(
-      body.data.avatarUrl,
-    );
-    const bannerUrl = validStoragePath(
-      body.data.bannerUrl,
-    );
-    if (avatarUrl === "" || bannerUrl === "") {
+
+    const avatarUrl =
+      validStoragePath(
+        body.data.avatarUrl,
+      );
+
+    const bannerUrl =
+      validStoragePath(
+        body.data.bannerUrl,
+      );
+
+    if (
+      avatarUrl === ""
+      || bannerUrl === ""
+    ) {
       res.status(400).json({
         error:
           "Les images doivent être téléversées dans le stockage PAYLOCA.",
       });
       return;
     }
+
     const publicText = [
       body.data.displayName,
       body.data.bio,
@@ -232,13 +323,19 @@ router.put(
       body.data.shopDescription,
       ...body.data.categories,
     ];
-    if (publicText.some(containsUnsafeContact)) {
+
+    if (
+      publicText.some(
+        containsUnsafeContact,
+      )
+    ) {
       res.status(400).json({
         error:
           "Ne publiez pas de téléphone, e-mail ou lien dans votre profil.",
       });
       return;
     }
+
     const categories = [
       ...new Set(
         body.data.categories
@@ -246,18 +343,23 @@ router.put(
           .filter(Boolean),
       ),
     ];
+
     const authenticated =
       req as AuthenticatedRequest;
-    await ensureSellerProfile(authenticated);
+
+    await ensureSellerProfile(
+      authenticated,
+    );
+
     if (
-      !(await isOwnedImage(
+      !await isOwnedImage(
         authenticated.userId,
         avatarUrl,
-      )) ||
-      !(await isOwnedImage(
+      )
+      || !await isOwnedImage(
         authenticated.userId,
         bannerUrl,
-      ))
+      )
     ) {
       res.status(403).json({
         error:
@@ -265,130 +367,165 @@ router.put(
       });
       return;
     }
+
     try {
-      await db.transaction(async (tx) => {
-        for (const objectPath of new Set(
-          [avatarUrl, bannerUrl].filter(
-            (path): path is string =>
-              Boolean(path),
-          ),
-        )) {
-          const [claimed] = await tx
-            .update(storedImagesTable)
-            .set({
-              sellerProfileOwnerId:
-                authenticated.userId,
-            })
-            .where(
-              and(
-                eq(
-                  storedImagesTable.objectPath,
-                  objectPath,
-                ),
-                eq(
-                  storedImagesTable.ownerId,
-                  authenticated.userId,
-                ),
-                isNull(
-                  storedImagesTable.listingId,
-                ),
-                isNull(
-                  storedImagesTable.conversationId,
-                ),
-                or(
-                  isNull(
-                    storedImagesTable.sellerProfileOwnerId,
-                  ),
-                  eq(
-                    storedImagesTable.sellerProfileOwnerId,
-                    authenticated.userId,
-                  ),
-                ),
+      await db.transaction(
+        async (tx) => {
+          for (
+            const objectPath of new Set(
+              [avatarUrl, bannerUrl].filter(
+                (
+                  path,
+                ): path is string =>
+                  Boolean(path),
               ),
             )
-            .returning({
-              id: storedImagesTable.id,
-            });
-          if (!claimed) {
-            throw new SellerImageClaimError();
+          ) {
+            const [claimed] =
+              await tx
+                .update(storedImagesTable)
+                .set({
+                  sellerProfileOwnerId:
+                    authenticated.userId,
+                })
+                .where(
+                  and(
+                    eq(
+                      storedImagesTable.objectPath,
+                      objectPath,
+                    ),
+                    eq(
+                      storedImagesTable.ownerId,
+                      authenticated.userId,
+                    ),
+                    isNull(
+                      storedImagesTable.listingId,
+                    ),
+                    isNull(
+                      storedImagesTable.conversationId,
+                    ),
+                    or(
+                      isNull(
+                        storedImagesTable.sellerProfileOwnerId,
+                      ),
+                      eq(
+                        storedImagesTable.sellerProfileOwnerId,
+                        authenticated.userId,
+                      ),
+                    ),
+                  ),
+                )
+                .returning({
+                  id: storedImagesTable.id,
+                });
+
+            if (!claimed) {
+              throw new SellerImageClaimError();
+            }
           }
-        }
-        await tx
-          .update(sellerProfilesTable)
-          .set({
-            displayName:
-              body.data.displayName.trim(),
-            bio: body.data.bio.trim(),
-            city: body.data.city.trim(),
-            avatarUrl,
-            updatedAt: new Date(),
-          })
-          .where(
-            eq(
-              sellerProfilesTable.userId,
-              authenticated.userId,
-            ),
-          );
-        await tx
-          .update(sellerShopsTable)
-          .set({
-            name: body.data.shopName.trim(),
-            description:
-              body.data.shopDescription.trim(),
-            bannerUrl,
-            categories,
-            updatedAt: new Date(),
-          })
-          .where(
-            eq(
-              sellerShopsTable.ownerId,
-              authenticated.userId,
-            ),
-          );
-      });
+
+          await tx
+            .update(sellerProfilesTable)
+            .set({
+              displayName:
+                body.data.displayName.trim(),
+              bio: body.data.bio.trim(),
+              city: body.data.city.trim(),
+              avatarUrl,
+              updatedAt: new Date(),
+            })
+            .where(
+              eq(
+                sellerProfilesTable.userId,
+                authenticated.userId,
+              ),
+            );
+
+          await tx
+            .update(sellerShopsTable)
+            .set({
+              name: body.data.shopName.trim(),
+              description:
+                body.data.shopDescription.trim(),
+              bannerUrl,
+              categories,
+              updatedAt: new Date(),
+            })
+            .where(
+              eq(
+                sellerShopsTable.ownerId,
+                authenticated.userId,
+              ),
+            );
+        },
+      );
     } catch (error) {
-      if (!(error instanceof SellerImageClaimError)) {
+      if (
+        !(error instanceof SellerImageClaimError)
+      ) {
         throw error;
       }
+
       res.status(409).json({
         error:
           "Cette image est déjà utilisée dans un autre espace.",
       });
       return;
     }
-    const result = await getPublicSellerProfile(
-      authenticated.userId,
-    );
+
+    const result =
+      await getPublicSellerProfile(
+        authenticated.userId,
+      );
+
     res.json(
-      UpdateMySellerProfileResponse.parse(result),
+      UpdateMySellerProfileResponse.parse(
+        result,
+      ),
     );
   },
 );
+
 router.post(
   "/seller-verification-requests",
   requireAuth,
   async (req, res): Promise<void> => {
-    if (!requireAccountType(req, res, ["agency"])) {
+    if (
+      !requireAccountType(
+        req,
+        res,
+        ["agency"],
+      )
+    ) {
       return;
     }
+
     const body =
       CreateSellerVerificationRequestBody.safeParse(
         req.body,
       );
+
     if (!body.success) {
       res.status(400).json({
         error: body.error.message,
       });
       return;
     }
+
     const authenticated =
       req as AuthenticatedRequest;
-    await ensureSellerProfile(authenticated);
+
+    await ensureSellerProfile(
+      authenticated,
+    );
+
     const [pending] = await db
       .select({
         id: sellerVerificationRequestsTable.id,
       })
-      .from(sellerVerificationRequestsTable)
+      .from(
+        sellerVerificationRequestsTable,
+      )
       .where(
         and(
           eq(
@@ -402,6 +539,7 @@ router.post(
         ),
       )
       .limit(1);
+
     if (pending) {
       res.status(409).json({
         error:
@@ -409,7 +547,9 @@ router.post(
       });
       return;
     }
+
     let request;
+
     try {
       [request] = await db.transaction(
         async (tx) => {
@@ -419,10 +559,12 @@ router.post(
             )
             .values({
               userId: authenticated.userId,
-              details: body.data.details.trim(),
+              details:
+                body.data.details.trim(),
               status: "pending",
             })
             .returning();
+
           await tx
             .update(sellerProfilesTable)
             .set({
@@ -435,19 +577,25 @@ router.post(
                 authenticated.userId,
               ),
             );
+
           return inserted;
         },
       );
     } catch (error) {
-      if (getDatabaseErrorCode(error) !== "23505") {
+      if (
+        getDatabaseErrorCode(error)
+        !== "23505"
+      ) {
         throw error;
       }
+
       res.status(409).json({
         error:
           "Une demande de vérification est déjà en cours.",
       });
       return;
     }
+
     res.status(201).json(
       CreateSellerVerificationRequestResponse.parse(
         request,
@@ -455,15 +603,24 @@ router.post(
     );
   },
 );
+
 router.get(
   "/seller-verification-requests/mine",
   requireAuth,
   async (req, res): Promise<void> => {
-    if (!requireAccountType(req, res, ["agency"])) {
+    if (
+      !requireAccountType(
+        req,
+        res,
+        ["agency"],
+      )
+    ) {
       return;
     }
+
     const userId =
       (req as AuthenticatedRequest).userId;
+
     const [request] = await db
       .select()
       .from(sellerVerificationRequestsTable)
@@ -479,6 +636,7 @@ router.get(
         ),
       )
       .limit(1);
+
     res.json(
       GetMySellerVerificationRequestResponse.parse(
         request ?? null,
@@ -486,6 +644,7 @@ router.get(
     );
   },
 );
+
 router.get(
   "/seller-verification-requests/moderation",
   requireAuth,
@@ -495,12 +654,14 @@ router.get(
       ListSellerVerificationRequestsQueryParams.safeParse(
         req.query,
       );
+
     if (!query.success) {
       res.status(400).json({
         error: query.error.message,
       });
       return;
     }
+
     const requests = await db
       .select()
       .from(sellerVerificationRequestsTable)
@@ -515,6 +676,7 @@ router.get(
           sellerVerificationRequestsTable.createdAt,
         ),
       );
+
     res.json(
       ListSellerVerificationRequestsResponse.parse(
         requests,
@@ -522,6 +684,7 @@ router.get(
     );
   },
 );
+
 router.patch(
   "/seller-verification-requests/:id",
   requireAuth,
@@ -531,27 +694,37 @@ router.patch(
       ModerateSellerVerificationRequestParams.safeParse(
         req.params,
       );
+
     const body =
       ModerateSellerVerificationRequestBody.safeParse(
         req.body,
       );
+
     if (!params.success || !body.success) {
       res.status(400).json({
         error: "Décision invalide.",
       });
       return;
     }
+
     const note =
-      body.data.moderationNote?.trim() || null;
-    if (body.data.status === "rejected" && !note) {
+      body.data.moderationNote?.trim()
+      || null;
+
+    if (
+      body.data.status === "rejected"
+      && !note
+    ) {
       res.status(400).json({
         error:
           "Un motif est requis pour refuser la demande.",
       });
       return;
     }
+
     const reviewerId =
       (req as AuthenticatedRequest).userId;
+
     const [existing] = await db
       .select()
       .from(sellerVerificationRequestsTable)
@@ -562,18 +735,23 @@ router.patch(
         ),
       )
       .limit(1);
+
     if (!existing) {
       res.status(404).json({
         error: "Demande introuvable.",
       });
       return;
     }
+
     let updated;
+
     try {
       [updated] = await db.transaction(
         async (tx) => {
           const [request] = await tx
-            .update(sellerVerificationRequestsTable)
+            .update(
+              sellerVerificationRequestsTable,
+            )
             .set({
               status: body.data.status,
               moderationNote: note,
@@ -593,13 +771,16 @@ router.patch(
               ),
             )
             .returning();
+
           if (!request) {
             throw new VerificationAlreadyModeratedError();
           }
+
           await tx
             .update(sellerProfilesTable)
             .set({
-              verificationStatus: body.data.status,
+              verificationStatus:
+                body.data.status,
               verifiedAt:
                 body.data.status === "approved"
                   ? new Date()
@@ -612,21 +793,27 @@ router.patch(
                 request.userId,
               ),
             );
+
           return [request];
         },
       );
     } catch (error) {
       if (
-        !(error instanceof VerificationAlreadyModeratedError)
+        !(
+          error
+          instanceof VerificationAlreadyModeratedError
+        )
       ) {
         throw error;
       }
+
       res.status(409).json({
         error:
           "Cette demande a déjà été traitée.",
       });
       return;
     }
+
     res.json(
       ModerateSellerVerificationRequestResponse.parse(
         updated,
@@ -634,28 +821,36 @@ router.patch(
     );
   },
 );
+
 router.post(
   "/seller-reports",
   requireAuth,
   async (req, res): Promise<void> => {
-    const body = CreateSellerReportBody.safeParse(
-      req.body,
-    );
+    const body =
+      CreateSellerReportBody.safeParse(
+        req.body,
+      );
+
     if (!body.success) {
       res.status(400).json({
         error: body.error.message,
       });
       return;
     }
+
     const reporterId =
       (req as AuthenticatedRequest).userId;
-    if (reporterId === body.data.targetUserId) {
+
+    if (
+      reporterId === body.data.targetUserId
+    ) {
       res.status(400).json({
         error:
           "Vous ne pouvez pas signaler votre propre profil.",
       });
       return;
     }
+
     const [target] = await db
       .select({
         userId: sellerProfilesTable.userId,
@@ -668,12 +863,15 @@ router.post(
         ),
       )
       .limit(1);
+
     if (!target) {
       res.status(404).json({
-        error: "Profil vendeur introuvable.",
+        error:
+          "Profil vendeur introuvable.",
       });
       return;
     }
+
     try {
       const [report] = await db
         .insert(sellerReportsTable)
@@ -681,10 +879,12 @@ router.post(
           reporterId,
           targetUserId: target.userId,
           reason: body.data.reason,
-          details: body.data.details?.trim() ?? "",
+          details:
+            body.data.details?.trim() ?? "",
           status: "pending",
         })
         .returning();
+
       res.status(201).json(
         CreateSellerReportResponse.parse({
           id: report.id,
@@ -693,15 +893,21 @@ router.post(
         }),
       );
     } catch (error) {
-      if (getDatabaseErrorCode(error) !== "23505") {
+      if (
+        getDatabaseErrorCode(error)
+        !== "23505"
+      ) {
         throw error;
       }
+
       res.status(409).json({
-        error: "Vous avez déjà signalé ce profil.",
+        error:
+          "Vous avez déjà signalé ce profil.",
       });
     }
   },
 );
+
 router.get(
   "/seller-reports/moderation",
   requireAuth,
@@ -711,12 +917,14 @@ router.get(
       ListSellerReportsQueryParams.safeParse(
         req.query,
       );
+
     if (!query.success) {
       res.status(400).json({
         error: query.error.message,
       });
       return;
     }
+
     const reports = await db
       .select()
       .from(sellerReportsTable)
@@ -727,13 +935,19 @@ router.get(
         ),
       )
       .orderBy(
-        desc(sellerReportsTable.createdAt),
+        desc(
+          sellerReportsTable.createdAt,
+        ),
       );
+
     res.json(
-      ListSellerReportsResponse.parse(reports),
+      ListSellerReportsResponse.parse(
+        reports,
+      ),
     );
   },
 );
+
 router.patch(
   "/seller-reports/:id",
   requireAuth,
@@ -743,19 +957,25 @@ router.patch(
       ModerateSellerReportParams.safeParse(
         req.params,
       );
+
     const body =
-      ModerateSellerReportBody.safeParse(req.body);
+      ModerateSellerReportBody.safeParse(
+        req.body,
+      );
+
     if (!params.success || !body.success) {
       res.status(400).json({
         error: "Décision invalide.",
       });
       return;
     }
+
     const [updated] = await db
       .update(sellerReportsTable)
       .set({
         status: body.data.status,
-        resolution: body.data.resolution.trim(),
+        resolution:
+          body.data.resolution.trim(),
         reviewerId:
           (req as AuthenticatedRequest).userId,
         updatedAt: new Date(),
@@ -773,17 +993,26 @@ router.patch(
         ),
       )
       .returning();
+
     if (!updated) {
       res.status(404).json({
-        error: "Signalement introuvable.",
+        error:
+          "Signalement introuvable.",
       });
       return;
     }
+
     res.json(
-      ModerateSellerReportResponse.parse(updated),
+      ModerateSellerReportResponse.parse(
+        updated,
+      ),
     );
   },
 );
+
 export default router;
-class VerificationAlreadyModeratedError extends Error {}
+
+class VerificationAlreadyModeratedError
+  extends Error {}
+
 class SellerImageClaimError extends Error {}
