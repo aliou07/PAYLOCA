@@ -1,5 +1,16 @@
-import { Router, type IRouter } from "express";
-import { and, desc, eq, inArray, isNull, or, sql } from "drizzle-orm";
+import {
+  Router,
+  type IRouter,
+} from "express";
+import {
+  and,
+  desc,
+  eq,
+  inArray,
+  isNull,
+  or,
+  sql,
+} from "drizzle-orm";
 import {
   db,
   conversationsTable,
@@ -33,51 +44,82 @@ const storage = new ObjectStorageService();
 const unsafeMessage =
   /(?:https?:\/\/|www\.|(?:\+?\d[\d\s().-]{7,}\d))/i;
 const isStoredImagePath = (value: string) =>
-  value.startsWith("/objects/uploads/") &&
-  !value.includes("..") &&
-  !value.includes("data:");
+  value.startsWith("/objects/uploads/")
+  && !value.includes("..")
+  && !value.includes("data:");
 router.get(
   "/conversations",
   requireAuth,
   async (req, res): Promise<void> => {
-    const userId = (req as AuthenticatedRequest).userId;
+    const userId =
+      (req as AuthenticatedRequest).userId;
     const conversations = await db
       .select()
       .from(conversationsTable)
       .where(
         or(
-          eq(conversationsTable.participantId, userId),
-          eq(conversationsTable.ownerId, userId),
+          eq(
+            conversationsTable.participantId,
+            userId,
+          ),
+          eq(
+            conversationsTable.ownerId,
+            userId,
+          ),
         ),
       )
-      .orderBy(desc(conversationsTable.updatedAt));
-    res.json(ListConversationsResponse.parse(conversations));
+      .orderBy(
+        desc(conversationsTable.updatedAt),
+      );
+    res.json(
+      ListConversationsResponse.parse(
+        conversations,
+      ),
+    );
   },
 );
 router.get(
   "/discussion-requests",
   requireAuth,
   async (req, res): Promise<void> => {
-    const userId = (req as AuthenticatedRequest).userId;
+    const userId =
+      (req as AuthenticatedRequest).userId;
     const requests = await db
       .select({
         id: discussionRequestsTable.id,
-        conversationId: discussionRequestsTable.conversationId,
-        listingId: discussionRequestsTable.listingId,
-        requesterId: discussionRequestsTable.requesterId,
-        initialMessage: discussionRequestsTable.initialMessage,
-        status: discussionRequestsTable.status,
-        refusalCount: discussionRequestsTable.refusalCount,
-        createdAt: discussionRequestsTable.createdAt,
+        conversationId:
+          discussionRequestsTable.conversationId,
+        listingId:
+          discussionRequestsTable.listingId,
+        requesterId:
+          discussionRequestsTable.requesterId,
+        initialMessage:
+          discussionRequestsTable.initialMessage,
+        status:
+          discussionRequestsTable.status,
+        refusalCount:
+          discussionRequestsTable.refusalCount,
+        createdAt:
+          discussionRequestsTable.createdAt,
       })
       .from(discussionRequestsTable)
       .where(
         and(
-          eq(discussionRequestsTable.recipientId, userId),
-          eq(discussionRequestsTable.status, "PENDING"),
+          eq(
+            discussionRequestsTable.recipientId,
+            userId,
+          ),
+          eq(
+            discussionRequestsTable.status,
+            "PENDING",
+          ),
         ),
       )
-      .orderBy(desc(discussionRequestsTable.createdAt));
+      .orderBy(
+        desc(
+          discussionRequestsTable.createdAt,
+        ),
+      );
     res.json(requests);
   },
 );
@@ -85,15 +127,21 @@ router.patch(
   "/discussion-requests/:id",
   requireAuth,
   async (req, res): Promise<void> => {
-    const userId = (req as AuthenticatedRequest).userId;
+    const userId =
+      (req as AuthenticatedRequest).userId;
     const id = Number(req.params.id);
     const action = req.body?.action;
     if (
-      !Number.isInteger(id) ||
-      !["accept", "refuse", "block"].includes(action)
+      !Number.isInteger(id)
+      || ![
+        "accept",
+        "refuse",
+        "block",
+      ].includes(action)
     ) {
       res.status(400).json({
-        error: "Décision de demande invalide.",
+        error:
+          "Décision de demande invalide.",
       });
       return;
     }
@@ -102,14 +150,24 @@ router.patch(
       .from(discussionRequestsTable)
       .where(
         and(
-          eq(discussionRequestsTable.id, id),
-          eq(discussionRequestsTable.recipientId, userId),
-          eq(discussionRequestsTable.status, "PENDING"),
+          eq(
+            discussionRequestsTable.id,
+            id,
+          ),
+          eq(
+            discussionRequestsTable.recipientId,
+            userId,
+          ),
+          eq(
+            discussionRequestsTable.status,
+            "PENDING",
+          ),
         ),
       );
     if (!request) {
       res.status(404).json({
-        error: "Demande introuvable ou déjà traitée.",
+        error:
+          "Demande introuvable ou déjà traitée.",
       });
       return;
     }
@@ -120,14 +178,22 @@ router.patch(
           status: "ACCEPTED",
           decidedAt: new Date(),
         })
-        .where(eq(discussionRequestsTable.id, id))
+        .where(
+          eq(
+            discussionRequestsTable.id,
+            id,
+          ),
+        )
         .returning();
       const [message] = await db
         .insert(messagesTable)
         .values({
-          conversationId: request.conversationId,
-          senderId: request.requesterId,
-          senderName: "Utilisateur PAYLOCA",
+          conversationId:
+            request.conversationId,
+          senderId:
+            request.requesterId,
+          senderName:
+            "Utilisateur PAYLOCA",
           body: request.initialMessage,
           status: "Envoyé",
         })
@@ -135,11 +201,17 @@ router.patch(
       await db
         .update(conversationsTable)
         .set({
-          lastMessage: request.initialMessage,
+          lastMessage:
+            request.initialMessage,
           unread: true,
           updatedAt: new Date(),
         })
-        .where(eq(conversationsTable.id, request.conversationId));
+        .where(
+          eq(
+            conversationsTable.id,
+            request.conversationId,
+          ),
+        );
       res.json({
         request: updated,
         message,
@@ -147,40 +219,61 @@ router.patch(
       });
       return;
     }
-    const [{ count: previousRefusals }] = await db
-      .select({
-        count: sql<number>`count(*)`,
-      })
-      .from(discussionRequestsTable)
-      .where(
-        and(
-          eq(
-            discussionRequestsTable.requesterId,
-            request.requesterId,
+    const [{ count: previousRefusals }] =
+      await db
+        .select({
+          count: sql<number>`count(*)`,
+        })
+        .from(discussionRequestsTable)
+        .where(
+          and(
+            eq(
+              discussionRequestsTable.requesterId,
+              request.requesterId,
+            ),
+            eq(
+              discussionRequestsTable.recipientId,
+              userId,
+            ),
+            or(
+              eq(
+                discussionRequestsTable.status,
+                "REFUSED",
+              ),
+              eq(
+                discussionRequestsTable.status,
+                "BLOCKED",
+              ),
+            ),
           ),
-          eq(discussionRequestsTable.recipientId, userId),
-          or(
-            eq(discussionRequestsTable.status, "REFUSED"),
-            eq(discussionRequestsTable.status, "BLOCKED"),
-          ),
-        ),
-      );
-    const nextCount = Number(previousRefusals) + 1;
+        );
+    const nextCount =
+      Number(previousRefusals) + 1;
     const blockedUntil =
-      action === "block" || nextCount >= 3
+      action === "block"
+      || nextCount >= 3
         ? new Date(
-            Date.now() + 7 * 24 * 60 * 60 * 1000,
+            Date.now()
+            + 7 * 24 * 60 * 60 * 1000,
           )
         : null;
     const [updated] = await db
       .update(discussionRequestsTable)
       .set({
-        status: action === "block" ? "BLOCKED" : "REFUSED",
+        status:
+          action === "block"
+            ? "BLOCKED"
+            : "REFUSED",
         refusalCount: nextCount,
         blockedUntil,
         decidedAt: new Date(),
       })
-      .where(eq(discussionRequestsTable.id, id))
+      .where(
+        eq(
+          discussionRequestsTable.id,
+          id,
+        ),
+      )
       .returning();
     res.json({
       request: updated,
@@ -193,8 +286,13 @@ router.post(
   "/conversations",
   requireAuth,
   async (req, res): Promise<void> => {
-    if (!requireVipAccess(req, res)) return;
-    const parsed = CreateConversationBody.safeParse(req.body);
+    if (!requireVipAccess(req, res)) {
+      return;
+    }
+    const parsed =
+      CreateConversationBody.safeParse(
+        req.body,
+      );
     if (!parsed.success) {
       res.status(400).json({
         error: parsed.error.message,
@@ -206,8 +304,14 @@ router.post(
       .from(listingsTable)
       .where(
         and(
-          eq(listingsTable.id, parsed.data.listingId),
-          inArray(listingsTable.status, ["libre", "actif"]),
+          eq(
+            listingsTable.id,
+            parsed.data.listingId,
+          ),
+          inArray(listingsTable.status, [
+            "libre",
+            "actif",
+          ]),
         ),
       );
     if (!listing) {
@@ -216,7 +320,8 @@ router.post(
       });
       return;
     }
-    const userId = (req as AuthenticatedRequest).userId;
+    const userId =
+      (req as AuthenticatedRequest).userId;
     if (!listing.ownerId) {
       res.status(409).json({
         error:
@@ -231,22 +336,31 @@ router.post(
       });
       return;
     }
-    const participantName = await getAuthenticatedUserName(
-      userId,
-      req,
-    );
+    const participantName =
+      await getAuthenticatedUserName(
+        userId,
+        req,
+      );
     const [existing] = await db
       .select()
       .from(conversationsTable)
       .where(
         and(
-          eq(conversationsTable.listingId, listing.id),
-          eq(conversationsTable.participantId, userId),
+          eq(
+            conversationsTable.listingId,
+            listing.id,
+          ),
+          eq(
+            conversationsTable.participantId,
+            userId,
+          ),
         ),
       );
     if (existing) {
       res.status(201).json(
-        CreateConversationResponse.parse(existing),
+        CreateConversationResponse.parse(
+          existing,
+        ),
       );
       return;
     }
@@ -261,7 +375,9 @@ router.post(
       })
       .returning();
     res.status(201).json(
-      CreateConversationResponse.parse(conversation),
+      CreateConversationResponse.parse(
+        conversation,
+      ),
     );
   },
 );
@@ -269,23 +385,36 @@ router.get(
   "/conversations/:id/messages",
   requireAuth,
   async (req, res): Promise<void> => {
-    const parsed = ListMessagesParams.safeParse(req.params);
+    const parsed =
+      ListMessagesParams.safeParse(
+        req.params,
+      );
     if (!parsed.success) {
       res.status(400).json({
         error: parsed.error.message,
       });
       return;
     }
-    const userId = (req as AuthenticatedRequest).userId;
+    const userId =
+      (req as AuthenticatedRequest).userId;
     const [conversation] = await db
       .select()
       .from(conversationsTable)
       .where(
         and(
-          eq(conversationsTable.id, parsed.data.id),
+          eq(
+            conversationsTable.id,
+            parsed.data.id,
+          ),
           or(
-            eq(conversationsTable.participantId, userId),
-            eq(conversationsTable.ownerId, userId),
+            eq(
+              conversationsTable.participantId,
+              userId,
+            ),
+            eq(
+              conversationsTable.ownerId,
+              userId,
+            ),
           ),
         ),
       );
@@ -298,18 +427,33 @@ router.get(
     const messages = await db
       .select()
       .from(messagesTable)
-      .where(eq(messagesTable.conversationId, conversation.id))
+      .where(
+        eq(
+          messagesTable.conversationId,
+          conversation.id,
+        ),
+      )
       .orderBy(messagesTable.createdAt);
-    res.json(ListMessagesResponse.parse(messages));
+    res.json(
+      ListMessagesResponse.parse(messages),
+    );
   },
 );
 router.post(
   "/conversations/:id/messages",
   requireAuth,
   async (req, res): Promise<void> => {
-    if (!requireVipAccess(req, res)) return;
-    const params = CreateMessageParams.safeParse(req.params);
-    const body = CreateMessageBody.safeParse(req.body);
+    if (!requireVipAccess(req, res)) {
+      return;
+    }
+    const params =
+      CreateMessageParams.safeParse(
+        req.params,
+      );
+    const body =
+      CreateMessageBody.safeParse(
+        req.body,
+      );
     if (!params.success || !body.success) {
       res.status(400).json({
         error: "Message invalide.",
@@ -331,8 +475,10 @@ router.post(
       return;
     }
     if (
-      body.data.imageUrl &&
-      !isStoredImagePath(body.data.imageUrl)
+      body.data.imageUrl
+      && !isStoredImagePath(
+        body.data.imageUrl,
+      )
     ) {
       res.status(400).json({
         error:
@@ -340,20 +486,31 @@ router.post(
       });
       return;
     }
-    const userId = (req as AuthenticatedRequest).userId;
-    const senderName = await getAuthenticatedUserName(
-      userId,
-      req,
-    );
+    const userId =
+      (req as AuthenticatedRequest).userId;
+    const senderName =
+      await getAuthenticatedUserName(
+        userId,
+        req,
+      );
     const [conversation] = await db
       .select()
       .from(conversationsTable)
       .where(
         and(
-          eq(conversationsTable.id, params.data.id),
+          eq(
+            conversationsTable.id,
+            params.data.id,
+          ),
           or(
-            eq(conversationsTable.participantId, userId),
-            eq(conversationsTable.ownerId, userId),
+            eq(
+              conversationsTable.participantId,
+              userId,
+            ),
+            eq(
+              conversationsTable.ownerId,
+              userId,
+            ),
           ),
         ),
       );
@@ -388,15 +545,20 @@ router.post(
             conversation.id,
           ),
         )
-        .orderBy(desc(discussionRequestsTable.createdAt))
+        .orderBy(
+          desc(
+            discussionRequestsTable.createdAt,
+          ),
+        )
         .limit(1);
       if (
-        Number(count) === 0 &&
-        latestRequest?.status !== "ACCEPTED"
+        Number(count) === 0
+        && latestRequest?.status !== "ACCEPTED"
       ) {
         if (
-          latestRequest?.blockedUntil &&
-          latestRequest.blockedUntil > new Date()
+          latestRequest?.blockedUntil
+          && latestRequest.blockedUntil
+            > new Date()
         ) {
           res.status(403).json({
             error:
@@ -405,7 +567,9 @@ router.post(
           });
           return;
         }
-        if (latestRequest?.status === "PENDING") {
+        if (
+          latestRequest?.status === "PENDING"
+        ) {
           res.status(409).json({
             error:
               "Demande envoyée. En attente d'acceptation",
@@ -416,8 +580,10 @@ router.post(
         const [request] = await db
           .insert(discussionRequestsTable)
           .values({
-            conversationId: conversation.id,
-            listingId: conversation.listingId,
+            conversationId:
+              conversation.id,
+            listingId:
+              conversation.listingId,
             requesterId: userId,
             recipientId,
             initialMessage: message,
@@ -443,9 +609,16 @@ router.post(
               storedImagesTable.objectPath,
               body.data.imageUrl,
             ),
-            eq(storedImagesTable.ownerId, userId),
-            isNull(storedImagesTable.listingId),
-            isNull(storedImagesTable.conversationId),
+            eq(
+              storedImagesTable.ownerId,
+              userId,
+            ),
+            isNull(
+              storedImagesTable.listingId,
+            ),
+            isNull(
+              storedImagesTable.conversationId,
+            ),
             isNull(
               storedImagesTable.sellerProfileOwnerId,
             ),
@@ -453,11 +626,11 @@ router.post(
         )
         .limit(1);
       if (
-        !uploadedImage ||
-        !(await storage.verifyImage(
+        !uploadedImage
+        || !await storage.verifyImage(
           body.data.imageUrl,
           uploadedImage,
-        ))
+        )
       ) {
         res.status(403).json({
           error:
@@ -468,60 +641,76 @@ router.post(
     }
     let created;
     try {
-      [created] = await db.transaction(async (tx) => {
-        if (body.data.imageUrl) {
-          const [claimedImage] = await tx
-            .update(storedImagesTable)
+      [created] = await db.transaction(
+        async (tx) => {
+          if (body.data.imageUrl) {
+            const [claimedImage] =
+              await tx
+                .update(storedImagesTable)
+                .set({
+                  conversationId:
+                    conversation.id,
+                })
+                .where(
+                  and(
+                    eq(
+                      storedImagesTable.objectPath,
+                      body.data.imageUrl,
+                    ),
+                    eq(
+                      storedImagesTable.ownerId,
+                      userId,
+                    ),
+                    isNull(
+                      storedImagesTable.listingId,
+                    ),
+                    isNull(
+                      storedImagesTable.conversationId,
+                    ),
+                    isNull(
+                      storedImagesTable.sellerProfileOwnerId,
+                    ),
+                  ),
+                )
+                .returning({
+                  id: storedImagesTable.id,
+                });
+            if (!claimedImage) {
+              throw new Error(
+                "Cette image est déjà rattachée.",
+              );
+            }
+          }
+          const [newMessage] = await tx
+            .insert(messagesTable)
+            .values({
+              conversationId:
+                conversation.id,
+              senderName,
+              senderId: userId,
+              body: message,
+              imageUrl:
+                body.data.imageUrl ?? null,
+              status: "Envoyé",
+            })
+            .returning();
+          await tx
+            .update(conversationsTable)
             .set({
-              conversationId: conversation.id,
+              lastMessage:
+                message || "Photo envoyée",
+              unread: true,
+              updatedAt: new Date(),
             })
             .where(
-              and(
-                eq(
-                  storedImagesTable.objectPath,
-                  body.data.imageUrl,
-                ),
-                eq(storedImagesTable.ownerId, userId),
-                isNull(storedImagesTable.listingId),
-                isNull(storedImagesTable.conversationId),
-                isNull(
-                  storedImagesTable.sellerProfileOwnerId,
-                ),
+              eq(
+                conversationsTable.id,
+                conversation.id,
               ),
-            )
-            .returning({
-              id: storedImagesTable.id,
-            });
-          if (!claimedImage) {
-            throw new Error("Cette image est déjà rattachée.");
-          }
-        }
-        const [newMessage] = await tx
-          .insert(messagesTable)
-          .values({
-            conversationId: conversation.id,
-            senderName,
-            senderId: userId,
-            body: message,
-            imageUrl: body.data.imageUrl ?? null,
-            status: "Envoyé",
-          })
-          .returning();
-        await tx
-          .update(conversationsTable)
-          .set({
-            lastMessage: message || "Photo envoyée",
-            unread: true,
-            updatedAt: new Date(),
-          })
-          .where(
-            eq(
-              conversationsTable.id,
-              conversation.id,
-            ),
-          );
-        return [newMessage];
-      });
+            );
+          return [newMessage];
+        },
+      );
     } catch {
       res.status(409).json({
         error:
@@ -547,14 +736,18 @@ router.patch(
   "/messages/:id/read",
   requireAuth,
   async (req, res): Promise<void> => {
-    const parsed = MarkMessageReadParams.safeParse(req.params);
+    const parsed =
+      MarkMessageReadParams.safeParse(
+        req.params,
+      );
     if (!parsed.success) {
       res.status(400).json({
         error: parsed.error.message,
       });
       return;
     }
-    const userId = (req as AuthenticatedRequest).userId;
+    const userId =
+      (req as AuthenticatedRequest).userId;
     const [message] = await db
       .select()
       .from(messagesTable)
@@ -567,10 +760,19 @@ router.patch(
       )
       .where(
         and(
-          eq(messagesTable.id, parsed.data.id),
+          eq(
+            messagesTable.id,
+            parsed.data.id,
+          ),
           or(
-            eq(conversationsTable.participantId, userId),
-            eq(conversationsTable.ownerId, userId),
+            eq(
+              conversationsTable.participantId,
+              userId,
+            ),
+            eq(
+              conversationsTable.ownerId,
+              userId,
+            ),
           ),
         ),
       );
@@ -585,10 +787,17 @@ router.patch(
       .set({
         status: "Vu",
       })
-      .where(eq(messagesTable.id, message.messages.id))
+      .where(
+        eq(
+          messagesTable.id,
+          message.messages.id,
+        ),
+      )
       .returning();
     res.json(
-      MarkMessageReadResponse.parse(updated),
+      MarkMessageReadResponse.parse(
+        updated,
+      ),
     );
   },
 );
