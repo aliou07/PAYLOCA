@@ -5220,81 +5220,17 @@ function Router() {
     );
   }
 
-  if (location.startsWith("/profil/")) {
-    const userId =
-      decodeURIComponent(
-        location
-          .slice("/profil/".length)
-          .split(/[/?#]/)[0] ?? "",
-      );
-
-    return (
-      <ErrorBoundary resetKey={location}>
-        <Shell>
-          <SellerProfilePage userId={userId} />
-        </Shell>
-      </ErrorBoundary>
-    );
-  }
-
-  if (location.startsWith("/fil")) {
+   if (location.startsWith('/appels')) {
     return (
       <ErrorBoundary resetKey={location}>
         <AuthGate>
-          <Shell>
-            <FunPage />
-          </Shell>
+          <CallsPage />
         </AuthGate>
       </ErrorBoundary>
     );
   }
 
-  if (
-    location.startsWith("/recherche")
-  ) {
-    return (
-      <ErrorBoundary resetKey={location}>
-        <Shell>
-          <SearchPage />
-        </Shell>
-      </ErrorBoundary>
-    );
-  }
-
-  if (location.startsWith("/sos")) {
-    return (
-      <ErrorBoundary resetKey={location}>
-        <Shell>
-          <SosPage />
-        </Shell>
-      </ErrorBoundary>
-    );
-  }
-
-  if (
-    location.startsWith(
-      "/ligue-payloca",
-    )
-  ) {
-    return (
-      <ErrorBoundary resetKey={location}>
-        <LeaguePage />
-      </ErrorBoundary>
-    );
-  }
-
-  if (location.startsWith("/appels")) {
-    return (
-      <ErrorBoundary resetKey={location}>
-        <CallsPage />
-      </ErrorBoundary>
-    );
-  }
-
-  if (
-    location.startsWith("/parrainage")
-    || location.startsWith("/invite/")
-  ) {
+  if (location.startsWith('/parrainage') || location.startsWith('/invite/')) {
     return (
       <ErrorBoundary resetKey={location}>
         <ReferralPage />
@@ -5302,7 +5238,7 @@ function Router() {
     );
   }
 
-  if (location.startsWith("/aide")) {
+  if (location.startsWith('/aide')) {
     return (
       <ErrorBoundary resetKey={location}>
         <HelpPage />
@@ -5310,12 +5246,52 @@ function Router() {
     );
   }
 
-  if (
-    location.startsWith("/stories")
-  ) {
+  if (location.startsWith('/stories')) {
     return (
       <ErrorBoundary resetKey={location}>
-        <StoriesPage />
+        <AuthGate>
+          <StoriesPage />
+        </AuthGate>
+      </ErrorBoundary>
+    );
+  }
+
+  if (location.startsWith('/famille')) {
+    return (
+      <ErrorBoundary resetKey={location}>
+        <AuthGate>
+          <FamilyPage />
+        </AuthGate>
+      </ErrorBoundary>
+    );
+  }
+
+  if (location.startsWith('/parametres-famille')) {
+    return (
+      <ErrorBoundary resetKey={location}>
+        <AuthGate>
+          <FamilySettingsPage />
+        </AuthGate>
+      </ErrorBoundary>
+    );
+  }
+
+  if (location.startsWith('/controle-parental')) {
+    return (
+      <ErrorBoundary resetKey={location}>
+        <AuthGate>
+          <ParentalControlPage />
+        </AuthGate>
+      </ErrorBoundary>
+    );
+  }
+
+  if (location.startsWith('/chat-famille')) {
+    return (
+      <ErrorBoundary resetKey={location}>
+        <AuthGate>
+          <FamilyChatPage />
+        </AuthGate>
       </ErrorBoundary>
     );
   }
