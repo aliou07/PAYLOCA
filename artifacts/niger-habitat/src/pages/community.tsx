@@ -267,8 +267,9 @@ export function ReferralPage() {
         </p>
       </CommunityShell>
     );
-  },
-    if (!stats) {
+  }
+
+  if (!stats) {
     return (
       <CommunityShell
         title="Parrainage"
@@ -346,7 +347,7 @@ export function ReferralPage() {
             réclamation
             {stats.referralCount > 1
               ? "s"
-              : ""}{" "}
+              : ""} {" "}
             confirmée
             {stats.referralCount > 1
               ? "s"
@@ -424,7 +425,7 @@ export function ReferralPage() {
       )}
 
       <p className="mt-5 text-xs leading-5 text-[#676b76]">
-        Les récompenses expirent après 90 jours. Le plafond est de 20 semaines gagnées par compte ; les récompenses expirées ne comptent plus dans l’accès actif. Les paiements Mynita restent totalement séparés.
+        Les récompenses expirent après 90 jours. Le plafond est de 20 semaines gagnées par compte ; les récompenses expirées ne comptent plus dans l’accès actif. Les paiements Mynita rest[...] 
       </p>
 
       {notice && (
@@ -499,7 +500,7 @@ export function HelpPage() {
             <p className="mt-3 text-sm leading-6 text-[#676b76]">
               {question
                 === "Comment fonctionne le paiement ?"
-                ? "PAYLOCA n’est pas une banque et ne conserve ni carte, ni solde, ni code secret. Le paiement est effectué directement chez Mynita. PAYLOCA reçoit seulement le résultat sécurisé et la référence de transaction. En cas de problème de débit, contactez le support Mynita."
+                ? "PAYLOCA n’est pas une banque et ne conserve ni carte, ni solde, ni code secret. Le paiement est effectué directement chez Mynita. PAYLOCA reçoit seulement le résultat séc[...]"
                 : "PAYLOCA vous accompagne avec des règles simples, un téléphone vérifié et des outils de sécurité."}
             </p>
           </details>
