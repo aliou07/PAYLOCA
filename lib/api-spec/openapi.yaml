@@ -1,1 +1,2687 @@
-{}
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: API specification
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: listings
+    description: Rental listings
+  - name: messaging
+    description: Private Payloca conversations
+  - name: storage
+    description: Protected image uploads
+  - name: services
+    description: Certified home service providers
+  - name: jobs
+    description: Moderated employment offers and private applications
+  - name: seller-profiles
+    description: Public seller shops, verification requests, and human-reviewed reports
+  - name: social
+    description: Follow requests, search, and persistent community activity
+  - name: account
+    description: Authenticated PAYLOCA account spaces
+  - name: gifts
+    description: Cadeaux d’abonnement VIP
+  - name: membership
+    description: Abonnements VIP et historique des paiements
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      description: Returns server health status
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+  /listings:
+    get:
+      operationId: listListings
+      tags: [listings]
+      summary: List available rental listings
+      parameters:
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [all, house, shop]
+            default: all
+        - name: city
+          in: query
+          schema:
+            type: string
+        - name: maxPrice
+          in: query
+          schema:
+            type: number
+            minimum: 0
+      responses:
+        "200":
+          description: Available listings
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Listing"
+    post:
+      operationId: createListing
+      tags: [listings]
+      summary: Create a rental listing
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ListingInput"
+      responses:
+        "201":
+          description: Created listing
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Listing"
+  /listings/featured:
+    get:
+      operationId: getFeaturedListings
+      tags: [listings]
+      summary: Get featured listings for the home page
+      responses:
+        "200":
+          description: Featured listings
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Listing"
+  /listings/{id}/boost:
+    post:
+      operationId: boostListing
+      tags: [listings]
+      summary: Utiliser un boost VIP autorisé par le serveur sur une annonce possédée
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+      responses:
+        "201":
+          description: Annonce mise en avant et boost consommé
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BoostListingResult"
+        "200":
+          description: Annonce déjà mise en avant ; aucun nouveau boost consommé
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BoostListingResult"
+        "401":
+          description: Authentification requise
+        "403":
+          description: Le compte n’a plus de boost disponible ou ne possède pas cette annonce
+        "404":
+          description: Annonce introuvable
+  /listings/{id}/status:
+    patch:
+      operationId: updateListingStatus
+      tags: [listings]
+      summary: Update the status of a listing
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ListingStatusUpdate"
+      responses:
+        "200":
+          description: Updated listing
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Listing"
+        "403":
+          description: Only the owner can update the listing
+        "404":
+          description: Annonce introuvable
+  /listings/{id}:
+    get:
+      operationId: getListing
+      tags: [listings]
+      summary: Get a listing by id
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+      responses:
+        "200":
+          description: Listing details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Listing"
+        "404":
+          description: Annonce introuvable
+    patch:
+      operationId: updateListing
+      tags: [listings]
+      summary: Update a rental listing owned by the current user
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ListingUpdate"
+      responses:
+        "200":
+          description: Updated listing
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Listing"
+        "403":
+          description: Only the owner can update the listing
+        "404":
+          description: Annonce introuvable
+    delete:
+      operationId: deleteListing
+      tags: [listings]
+      summary: Delete a rental listing owned by the current user
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+      responses:
+        "204":
+          description: Listing deleted
+        "403":
+          description: Only the owner can delete the listing
+        "404":
+          description: Annonce introuvable
+  /conversations:
+    get:
+      operationId: listConversations
+      tags: [messaging]
+      summary: List conversations for the authenticated user
+      responses:
+        "200":
+          description: Conversations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Conversation"
+    post:
+      operationId: createConversation
+      tags: [messaging]
+      summary: Start or reuse a conversation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ConversationInput"
+      responses:
+        "201":
+          description: Conversation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Conversation"
+  /conversations/{id}/messages:
+    get:
+      operationId: listMessages
+      tags: [messaging]
+      summary: List messages in a conversation
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+      responses:
+        "200":
+          description: Messages
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Message"
+    post:
+      operationId: createMessage
+      tags: [messaging]
+      summary: Send a message
+      parameters:
+        - name: id
+          in: path
+          required: true          schema:
+            type: number
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MessageInput"
+      responses:
+        "201":
+          description: Sent message
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Message"
+        "400":
+          description: Invalid or unsafe message
+  /messages/{id}/read:
+    patch:
+      operationId: markMessageRead
+      tags: [messaging]
+      summary: Mark a message as seen
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+      responses:
+        "200":
+          description: Message marked as seen
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Message"
+  /service-providers:
+    get:
+      operationId: listServiceProviders
+      tags: [services]
+      summary: List certified home service providers
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+            maxLength: 80
+        - name: category
+          in: query
+          schema:
+            type: string
+            maxLength: 40
+        - name: city
+          in: query
+          schema:
+            type: string
+            maxLength: 80
+      responses:
+        "200":
+          description: Certified service providers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ServiceProvider"
+  /service-orders:
+    get:
+      operationId: listServiceOrders
+      tags: [services]
+      summary: List service orders for the authenticated user
+      responses:
+        "200":
+          description: Service orders
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ServiceOrder"
+        "401":
+          description: Authentication required
+    post:
+      operationId: createServiceOrder
+      tags: [services]
+      summary: Request a certified home service
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ServiceOrderInput"
+      responses:
+        "201":
+          description: Service order created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceOrder"
+        "400":
+          description: Invalid service order
+        "401":
+          description: Authentication required
+        "404":
+          description: Provider not found
+  /service-providers/{id}/reviews:
+    post:
+      operationId: createServiceReview
+      tags: [services]
+      summary: Review a provider after a service order
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ServiceReviewInput"
+      responses:
+        "201":
+          description: Review created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceReview"
+        "400":
+          description: Invalid review
+        "401":
+          description: Authentication required
+        "403":
+          description: Review requires an order owned by the current user
+        "404":
+          description: Provider or order not found
+  /jobs:
+    get:
+      operationId: listJobs
+      tags: [jobs]
+      summary: List approved employment offers
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+            maxLength: 100
+        - name: city
+          in: query
+          schema:
+            type: string
+            maxLength: 80
+        - name: contractType
+          in: query
+          schema:
+            type: string
+            enum: [all, CDI, CDD, Stage, Mission, Apprentissage]
+            default: all
+      responses:
+        "200":
+          description: Approved employment offers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Job"
+    post:
+      operationId: createJob
+      tags: [jobs]
+      summary: Submit an employment offer for moderation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JobInput"
+      responses:
+        "201":
+          description: Employment offer submitted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmployerJob"
+        "400":
+          description: Invalid employment offer
+        "401":
+          description: Authentication required
+  /jobs/mine:
+    get:
+      operationId: listMyJobs
+      tags: [jobs]
+      summary: List employment offers submitted by the authenticated employer
+      responses:
+        "200":
+          description: Employer employment offers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/EmployerJob"
+        "401":
+          description: Authentication required
+  /jobs/moderation:
+    get:
+      operationId: listJobsForModeration
+      tags: [jobs]
+      summary: List employment offers for Firebase moderators
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending_review, approved, rejected, closed]
+            default: pending_review
+      responses:
+        "200":
+          description: Employment offers awaiting or having received moderation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/EmployerJob"
+        "401":
+          description: Authentication required
+        "403":
+          description: Moderator role required
+  /jobs/{id}/moderation:
+    patch:
+      operationId: moderateJob
+      tags: [jobs]
+      summary: Approve, reject, or close an employment offer as a Firebase moderator
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JobModerationInput"
+      responses:
+        "200":
+          description: Moderated employment offer
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmployerJob"
+        "400":
+          description: Invalid moderation decision
+        "401":
+          description: Authentication required
+        "403":
+          description: Moderator role required
+        "404":
+          description: Employment offer not found
+  /jobs/{id}/applications:
+    get:
+      operationId: listJobApplications
+      tags: [jobs]
+      summary: List private applications for an employment offer owned by the authenticated employer
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+      responses:
+        "200":
+          description: Private applications
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/JobApplication"
+        "401":
+          description: Authentication required
+        "403":
+          description: Only the employer can view applications
+        "404":
+          description: Employment offer not found
+    post:
+      operationId: createJobApplication
+      tags: [jobs]
+      summary: Apply to an approved employment offer
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JobApplicationInput"
+      responses:
+        "201":
+          description: Application submitted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JobApplication"
+        "401":
+          description: Authentication required
+        "404":
+          description: Approved employment offer not found
+        "409":
+          description: Candidate already applied
+  /job-applications/{id}/status:
+    patch:
+      operationId: updateJobApplicationStatus
+      tags: [jobs]
+      summary: Update an application status as the offer owner
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JobApplicationStatusInput"
+      responses:
+        "200":
+          description: Application status updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JobApplication"
+        "401":
+          description: Authentication required
+        "403":
+          description: Only the employer can update the application
+        "404":
+          description: Application not found
+  /seller-profiles/{userId}:
+    get:
+      operationId: getSellerProfile
+      tags: [seller-profiles]
+      summary: Get a public seller profile, shop, and active listings
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 128
+      responses:
+        "200":
+          description: Public seller profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublicSellerProfile"
+        "404":
+          description: Seller profile not found
+  /seller-profile/me:
+    get:
+      operationId: getMySellerProfile
+      tags: [seller-profiles]
+      summary: Get or initialize the authenticated seller profile
+      responses:
+        "200":
+          description: Authenticated seller profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublicSellerProfile"
+        "401":
+          description: Authentication required
+    put:
+      operationId: updateMySellerProfile
+      tags: [seller-profiles]
+      summary: Update the authenticated seller profile and shop
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SellerProfileInput"
+      responses:
+        "200":
+          description: Updated seller profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublicSellerProfile"
+        "400":
+          description: Invalid profile
+        "401":
+          description: Authentication required
+  /seller-verification-requests:
+    post:
+      operationId: createSellerVerificationRequest
+      tags: [seller-profiles]
+      summary: Request a manual seller profile review
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SellerVerificationRequestInput"
+      responses:
+        "201":
+          description: Verification request submitted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SellerVerificationRequest"
+        "401":
+          description: Authentication required
+        "409":
+          description: A request is already pending
+  /seller-verification-requests/mine:
+    get:
+      operationId: getMySellerVerificationRequest
+      tags: [seller-profiles]
+      summary: Get the latest verification request for the authenticated seller
+      responses:
+        "200":
+          description: Latest request or null
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: "#/components/schemas/SellerVerificationRequest"
+                  - type: "null"
+        "401":
+          description: Authentication required
+  /seller-verification-requests/moderation:
+    get:
+      operationId: listSellerVerificationRequests
+      tags: [seller-profiles]
+      summary: List verification requests for Firebase moderators
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, approved, rejected]
+            default: pending
+      responses:
+        "200":
+          description: Verification requests
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SellerVerificationRequest"
+        "401":
+          description: Authentication required
+        "403":
+          description: Moderator role required
+  /seller-verification-requests/{id}:
+    patch:
+      operationId: moderateSellerVerificationRequest
+      tags: [seller-profiles]
+      summary: Approve or reject a seller verification request
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SellerVerificationModerationInput"
+      responses:
+        "200":
+          description: Moderated request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SellerVerificationRequest"
+        "400":
+          description: Invalid moderation decision
+        "401":
+          description: Authentication required
+        "403":
+          description: Moderator role required
+        "404":
+          description: Request not found
+  /seller-reports:
+    post:
+      operationId: createSellerReport
+      tags: [seller-profiles]
+      summary: Report a seller profile for human review
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SellerReportInput"
+      responses:
+        "201":
+          description: Report submitted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SellerReportReceipt"
+        "400":
+          description: Invalid report
+        "401":
+          description: Authentication required
+        "409":
+          description: Seller already reported by this account
+  /seller-reports/moderation:
+    get:
+      operationId: listSellerReports
+      tags: [seller-profiles]
+      summary: List seller reports for Firebase moderators
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, resolved, dismissed]
+            default: pending
+      responses:
+        "200":
+          description: Seller reports
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SellerReport"
+        "401":
+          description: Authentication required
+        "403":
+          description: Moderator role required
+  /seller-reports/{id}:
+    patch:
+      operationId: moderateSellerReport
+      tags: [seller-profiles]
+      summary: Resolve or dismiss a seller report
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SellerReportModerationInput"
+      responses:
+        "200":
+          description: Moderated seller report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SellerReport"
+        "400":
+          description: Invalid moderation decision
+        "401":
+          description: Authentication required
+        "403":
+          description: Moderator role required
+        "404":
+          description: Report not found
+  /feed/posts:
+    get:
+      operationId: listFeedPosts
+      tags: [feed]
+      summary: List recent PAYLOCA feed posts
+      responses:
+        "200":
+          description: Recent feed posts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FeedPost"
+    post:
+      operationId: createFeedPost
+      tags: [feed]
+      summary: Publish one authenticated and idempotent feed post
+      requestBody:
+        required: true
+        content:          application/json:
+            schema:
+              $ref: "#/components/schemas/FeedPostInput"
+      responses:
+        "201":
+          description: Feed post created or returned from an idempotent retry
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FeedPost"
+        "400":
+          description: Invalid or unsafe public text
+        "401":
+          description: Authentication required
+  /fun/videos:
+    get:
+      operationId: listFunVideos
+      tags: [fun]
+      summary: List published PAYLOCA FUN videos
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: number
+            minimum: 1
+            maximum: 30
+            default: 12
+      responses:
+        "200":
+          description: Published short videos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FunVideo"
+    post:
+      operationId: createFunVideo
+      tags: [fun]
+      summary: Publier une vidéo PAYLOCA FUN validée pour un compte utilisateur
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FunVideoInput"
+      responses:
+        "201":
+          description: Vidéo publiée ou renvoyée après une nouvelle tentative idempotente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FunVideo"
+        "400":
+          description: Métadonnées vidéo invalides ou dangereuses
+        "401":
+          description: Authentication required
+        "403":
+          description: Seuls les comptes utilisateur peuvent publier
+        "409":
+          description: Le fichier importé est déjà rattaché
+  /fun/videos/{id}/like:
+    post:
+      operationId: toggleFunVideoLike
+      tags: [fun]
+      summary: Activer ou retirer la mention « J’aime » de l’utilisateur connecté sur une vidéo FUN
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+      responses:
+        "200":
+          description: État de la mention « J’aime » enregistré
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FunLikeResponse"
+        "401":
+          description: Authentication required
+        "403":
+          description: Seuls les comptes utilisateur peuvent interagir
+        "404":
+          description: Video not found
+  /fun/videos/{id}/comments:
+    get:
+      operationId: listFunVideoComments
+      tags: [fun]
+      summary: List published comments for a FUN video
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+      responses:
+        "200":
+          description: Published comments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FunComment"
+        "404":
+          description: Video not found
+    post:
+      operationId: createFunVideoComment
+      tags: [fun]
+      summary: Add a safe comment to a FUN video
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FunCommentInput"
+      responses:
+        "201":
+          description: Comment created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FunComment"
+        "400":
+          description: Invalid or unsafe comment
+        "401":
+          description: Authentication required
+        "403":
+          description: Only eligible young accounts can interact
+        "404":
+          description: Video not found
+  /fun/videos/{id}/reports:
+    post:
+      operationId: reportFunVideo
+      tags: [fun]
+      summary: Report a FUN video for human moderation
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FunReportInput"
+      responses:
+        "201":
+          description: Report receipt
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FunReportReceipt"
+        "400":
+          description: Invalid report
+        "401":
+          description: Authentication required
+        "403":
+          description: Only eligible young accounts can interact
+        "404":
+          description: Video not found
+        "409":
+          description: The video was already reported by this user
+  /search:
+    get:
+      operationId: searchPayloca
+      tags: [social]
+      summary: Search feed posts and existing public seller profiles
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 80
+      responses:
+        "200":
+          description: Matching public posts and seller profiles
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SearchResponse"
+        "400":
+          description: Invalid search query
+  /follow/{followingId}:
+    get:
+      operationId: getFollowStatus
+      tags: [social]
+      summary: Get the authenticated user's follow request status
+      parameters:
+        - name: followingId
+          in: path
+          required: true
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 128
+      responses:
+        "200":
+          description: Follow request status, or null when no request exists
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FollowStatusResponse"
+        "401":
+          description: Authentication required
+    post:
+      operationId: createFollowRequest
+      tags: [social]
+      summary: Send a pending follow request to an existing public profile
+      parameters:
+        - name: followingId
+          in: path
+          required: true
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 128
+      responses:
+        "201":
+          description: Pending follow request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FollowRequest"
+        "400":
+          description: Self-follow is not allowed
+        "401":
+          description: Authentication required
+        "404":
+          description: Public profile not found
+        "409":
+          description: A follow request already exists
+  /streak:
+    get:
+      operationId: getMyStreak
+      tags: [social]
+      summary: Get the authenticated user's persistent activity streak
+      responses:
+        "200":
+          description: Activity streak and flame score
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Streak"
+        "401":
+          description: Authentication required
+  /streak/activity:
+    post:
+      operationId: recordStreakActivity
+      tags: [social]
+      summary: Record one authenticated activity for the streak
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RecordActivityInput"
+      responses:
+        "200":
+          description: Updated activity streak
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Streak"
+        "400":
+          description: Invalid activity
+        "401":
+          description: Authentication required
+  /streak/leaderboard:
+    get:
+      operationId: getStreakLeaderboard
+      tags: [social]
+      summary: List real public profiles ordered by persistent flame score
+      parameters:
+        - name: city
+          in: query
+          schema:
+            type: string
+            maxLength: 80
+        - name: limit
+          in: query
+          schema:
+            type: number
+            minimum: 1
+            maximum: 50
+            default: 50
+      responses:
+        "200":
+          description: Public leaderboard entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LeaderboardEntry"
+  /account-type:
+    get:
+      operationId: getMyAccountType
+      tags: [account]
+      summary: Get the authenticated user's account space
+      responses:
+        "200":
+          description: Current account space, or a required selection
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountTypeResponse"
+        "401":
+          description: Authentication required
+    post:
+      operationId: chooseAccountType
+      tags: [account]
+      summary: Choose the authenticated user's immutable account space
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AccountTypeInput"
+      responses:
+        "200":
+          description: Existing or newly selected account space
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountTypeResponse"
+        "400":
+          description: Invalid account space
+        "401":
+          description: Authentication required
+        "409":
+          description: A different account space is already selected
+  /push-tokens:
+    post:
+      operationId: registerPushToken
+      tags: [notifications]
+      summary: Register an FCM device token for the authenticated user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PushTokenInput"
+      responses:
+        "204":
+          description: Push token registered
+        "400":
+          description: Invalid push token
+    delete:
+      operationId: deletePushToken
+      tags: [notifications]
+      summary: Remove the authenticated user's FCM device tokens, or one supplied token
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PushTokenInput"
+      responses:
+        "204":
+          description: Push token or device tokens removed
+  /storage/uploads/request-url:
+    post:
+      operationId: requestUploadUrl
+      tags: [storage]
+      summary: Request a presigned image upload URL
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StorageUploadRequest"
+      responses:
+        "200":
+          description: Presigned upload URL
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StorageUploadResponse"
+        "400":
+          description: Invalid file metadata
+        "401":
+          description: Authentication required
+  /storage/uploads/fun-video/request-url:
+    post:
+      operationId: requestFunVideoUploadUrl
+      tags: [storage]
+      summary: Request a presigned PAYLOCA FUN video upload URL
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FunVideoUploadRequest"
+      responses:
+        "200":
+          description: Presigned video upload URL
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FunVideoUploadResponse"
+        "400":
+          description: Invalid video metadata
+        "401":
+          description: Authentication required
+        "403":
+          description: Fonctionnalité réservée aux comptes utilisateur
+  /storage/objects/{path}:
+    get:
+      operationId: getStoredImage
+      tags: [storage]
+      summary: Read an image stored for a listing or private conversation
+      parameters:
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Image bytes
+          content:
+            image/jpeg: {}
+            image/png: {}
+            image/webp: {}
+            image/gif: {}
+        "401":
+          description: Authentication required for a private chat image or FUN video
+        "403":
+          description: Access denied to a private chat image or FUN video
+        "404":
+          description: Image not found
+  /gifts:
+    get:
+      operationId: listGifts
+      tags: [gifts]
+      summary: List sent and received VIP gifts
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Gifts visible to the authenticated user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GiftsResponse"
+        "401":
+          description: Authentication required
+  /membership/payments:
+    get:
+      operationId: listMembershipPayments
+      tags: [membership]
+      summary: List payment and renewal events for the authenticated user
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Payment history for the authenticated user
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MembershipPayment"
+        "401":
+          description: Authentication required
+        "503":
+          description: Payment history unavailable
+  /gifts/payment:
+    post:
+      operationId: createGiftPayment
+      tags: [gifts]
+      summary: Prepare a Mynita payment for a VIP gift
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GiftInput"
+      responses:
+        "201":
+          description: Mynita checkout prepared
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GiftPaymentResponse"
+        "400":
+          description: Invalid gift details
+        "401":
+          description: Authentication required
+        "502":
+          description: Mynita checkout unavailable
+  /gifts/payment-return:
+    post:
+      operationId: confirmGiftPayment
+      tags: [gifts]
+      summary: Confirm a gift after an authenticated Mynita callback
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GiftPaymentReturnInput"
+      responses:
+        "200":
+          description: Gift payment processed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GiftPaymentReturnResponse"
+        "400":
+          description: Invalid or incomplete payment callback
+        "401":
+          description: Unauthenticated payment callback
+  /gifts/redeem:
+    post:
+      operationId: redeemGift
+      tags: [gifts]
+      summary: Redeem a VIP gift with the verified beneficiary phone
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GiftRedeemInput"
+      responses:
+        "200":
+          description: Gift redeemed and VIP activated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GiftRedeemResponse"
+        "400":
+          description: Invalid, unpaid or unavailable gift
+        "401":
+          description: Authentication required
+        "409":
+          description: Gift already redeemed or expired
+  /referrals:
+    get:
+      operationId: getReferralStats
+      tags: [social]
+      summary: Get the authenticated user's referral code and private statistics
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Referral statistics for the authenticated user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReferralStats"
+        "401":
+          description: Authentication required
+        "503":
+          description: Referral service unavailable
+  /referrals/claim:
+    post:
+      operationId: claimReferral
+      tags: [social]
+      summary: Claim a referral code once for the authenticated user
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReferralClaimInput"
+      responses:
+        "201":
+          description: Referral claimed and rewards recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReferralClaimResponse"
+        "400":
+          description: Invalid or unknown referral code
+        "401":
+          description: Authentication required
+        "409":
+          description: Referral already claimed or self-referral
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+    Listing:
+      type: object
+      required: [id, title, type, city, neighborhood, price, bedrooms, imageUrl, verified, description, contact, filtre, ownerName, ownerId, status, launchFreeUntil, premiumUntil, createdAt]
+      properties:
+        id:
+          type: number
+        title:
+          type: string
+        type:
+          type: string
+          enum: [house, shop]
+        city:
+          type: string
+        neighborhood:
+          type: string
+        price:
+          type: number
+        bedrooms:
+          type: number
+        imageUrl:
+          type: string
+        verified:
+          type: boolean
+        description:
+          type: string
+        contact:
+          type: ["string", "null"]
+        filtre:
+          type: ["string", "null"]
+        ownerName:
+          type: string
+        ownerId:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [libre, vendu, loue]
+        launchFreeUntil:
+          type: string
+          format: date-time
+        premiumUntil:
+          type: ["string", "null"]
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+    BoostListingResult:
+      type: object
+      required: [listingId, plan, boostsRemaining, premiumUntil]
+      properties:
+        listingId:
+          type: number
+        plan:
+          type: string
+          enum: [free, vip_bronze, vip_or]
+        boostsRemaining:
+          type: number
+        premiumUntil:
+          type: string
+          format: date-time
+    ListingInput:
+      type: object
+      required: [title, type, city, neighborhood, price, bedrooms, imageUrl, description, contact]
+      properties:
+        propertyCondition:
+          type: string
+          enum: [built_house, empty_land]
+        title:
+          type: string
+          minLength: 3
+        type:
+          type: string
+          enum: [house, shop]
+        city:
+          type: string
+        neighborhood:
+          type: string
+        price:
+          type: number
+          minimum: 0
+        bedrooms:
+          type: number
+          minimum: 0        imageUrl:
+          type: string
+        description:
+          type: string
+        contact:
+          type: string
+          minLength: 1
+        filtre:
+          type: string
+          maxLength: 50
+    ListingUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 3
+        type:
+          type: string
+          enum: [house, shop]
+        city:
+          type: string
+        neighborhood:
+          type: string
+        price:
+          type: number
+          minimum: 0
+        bedrooms:
+          type: number
+          minimum: 0
+        description:
+          type: string
+        contact:
+          type: string
+          minLength: 1
+        filtre:
+          type: string
+          maxLength: 50
+    ListingStatusUpdate:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [libre, vendu, loue]
+    Conversation:
+      type: object
+      required: [id, listingId, participantName, participantId, ownerName, ownerId, lastMessage, unread, createdAt, updatedAt]
+      properties:
+        id:
+          type: number
+        listingId:
+          type: number
+        participantName:
+          type: string
+        participantId:
+          type: ["string", "null"]
+        ownerName:
+          type: string
+        ownerId:
+          type: ["string", "null"]
+        lastMessage:
+          type: string
+        unread:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    ConversationInput:
+      type: object
+      required: [listingId]
+      properties:
+        listingId:
+          type: number
+    Message:
+      type: object
+      required: [id, conversationId, senderName, senderId, body, imageUrl, status, createdAt]
+      properties:
+        id:
+          type: number
+        conversationId:
+          type: number
+        senderName:
+          type: string
+        senderId:
+          type: ["string", "null"]
+        body:
+          type: string
+        imageUrl:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [Envoyé, Vu]
+        createdAt:
+          type: string
+          format: date-time
+    PushTokenInput:
+      type: object
+      required: [token]
+      properties:
+        token:
+          type: string
+          minLength: 10
+          maxLength: 4096
+    MessageInput:
+      type: object
+      required: [body]
+      properties:
+        body:
+          type: string
+        imageUrl:
+          type: ["string", "null"]
+    StorageUploadRequest:
+      type: object
+      required: [name, size, contentType]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        size:
+          type: number
+          minimum: 1
+          maximum: 10485760
+        contentType:
+          type: string
+          enum: [image/jpeg, image/png, image/webp, image/gif]
+    StorageUploadResponse:
+      type: object
+      required: [uploadURL, objectPath, metadata]
+      properties:
+        uploadURL:
+          type: string
+        objectPath:
+          type: string
+        metadata:
+          type: object
+          required: [name, size, contentType]
+          properties:
+            name:
+              type: string
+            size:
+              type: number
+            contentType:
+              type: string
+    ServiceProvider:
+      type: object
+      required: [id, name, category, photo, city, neighborhood, priceFrom, rating, reviewCount, certified, available, description, createdAt]
+      properties:
+        id:
+          type: number
+        name:
+          type: string
+        category:
+          type: string
+        photo:
+          type: ["string", "null"]
+        city:
+          type: string
+        neighborhood:
+          type: string
+        priceFrom:
+          type: number
+        rating:
+          type: number
+        reviewCount:
+          type: number
+        certified:
+          type: boolean
+        available:
+          type: boolean
+        description:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+    ServiceOrderInput:
+      type: object
+      required: [providerId, service]
+      properties:
+        providerId:
+          type: number
+          minimum: 1
+        service:
+          type: string
+          minLength: 2
+          maxLength: 120
+        details:
+          type: string
+          maxLength: 1000
+    ServiceOrder:
+      type: object
+      required: [id, providerId, providerName, clientId, service, details, status, createdAt, updatedAt]
+      properties:
+        id:
+          type: number
+        providerId:
+          type: number
+        providerName:
+          type: string
+        clientId:
+          type: string
+        service:
+          type: string
+        details:
+          type: string
+        status:
+          type: string
+          enum: [en_attente, acceptee, en_cours, terminee, annulee]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    ServiceReviewInput:
+      type: object
+      required: [orderId, rating]
+      properties:
+        orderId:
+          type: number
+          minimum: 1
+        rating:
+          type: number
+          minimum: 1
+          maximum: 5
+        comment:
+          type: string
+          maxLength: 500
+    ServiceReview:
+      type: object
+      required: [id, providerId, orderId, clientId, clientName, rating, comment, createdAt]
+      properties:
+        id:
+          type: number
+        providerId:
+          type: number
+        orderId:
+          type: number
+        clientId:
+          type: string
+        clientName:
+          type: string
+        rating:
+          type: number
+        comment:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+    Job:
+      type: object
+      required: [id, title, companyName, city, locationDetails, contractType, educationLevel, salaryMin, salaryMax, description, employerName, status, createdAt, updatedAt]
+      properties:
+        id:
+          type: number
+        title:
+          type: string
+        companyName:
+          type: string
+        city:
+          type: string
+        locationDetails:
+          type: string
+        contractType:
+          type: string
+          enum: [CDI, CDD, Stage, Mission, Apprentissage]
+        educationLevel:
+          type: string
+        salaryMin:
+          type: ["number", "null"]
+        salaryMax:
+          type: ["number", "null"]
+        description:
+          type: string
+        employerName:
+          type: string
+        status:
+          type: string
+          enum: [pending_review, approved, rejected, closed]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    EmployerJob:
+      allOf:
+        - $ref: "#/components/schemas/Job"
+        - type: object
+          required: [employerId, moderationNote]
+          properties:
+            employerId:
+              type: string
+            moderationNote:
+              type: ["string", "null"]
+    JobInput:
+      type: object
+      required: [title, companyName, city, contractType, description]
+      properties:
+        title:
+          type: string
+          minLength: 3
+          maxLength: 120
+        companyName:
+          type: string
+          minLength: 2
+          maxLength: 120
+        city:
+          type: string
+          minLength: 2
+          maxLength: 80
+        locationDetails:
+          type: string
+          maxLength: 160
+        contractType:
+          type: string
+          enum: [CDI, CDD, Stage, Mission, Apprentissage]
+        educationLevel:
+          type: string
+          maxLength: 100
+        salaryMin:
+          type: number
+          minimum: 0
+        salaryMax:
+          type: number
+          minimum: 0
+        description:
+          type: string
+          minLength: 20
+          maxLength: 4000
+    JobApplication:
+      type: object
+      required: [id, jobId, candidateId, candidateName, message, status, createdAt, updatedAt]
+      properties:
+        id:
+          type: number
+        jobId:
+          type: number
+        candidateId:
+          type: string
+        candidateName:
+          type: string
+        message:
+          type: string
+        status:
+          type: string
+          enum: [submitted, shortlisted, rejected]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    JobApplicationInput:
+      type: object
+      required: [message]
+      properties:
+        message:
+          type: string
+          minLength: 20
+          maxLength: 1500
+    JobApplicationStatusInput:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [submitted, shortlisted, rejected]
+    JobModerationInput:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [approved, rejected, closed]
+        moderationNote:
+          type: string
+          maxLength: 500
+    SellerProfile:
+      type: object
+      required: [userId, displayName, bio, city, avatarUrl, verificationStatus, verifiedAt, createdAt, updatedAt]
+      properties:
+        userId:
+          type: string
+        displayName:
+          type: string
+        bio:
+          type: string
+        city:
+          type: string
+        avatarUrl:
+          type: ["string", "null"]
+        verificationStatus:
+          type: string
+          enum: [unverified, pending, approved, rejected]
+        verifiedAt:
+          type: ["string", "null"]
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    SellerShop:
+      type: object
+      required: [name, description, bannerUrl, categories]
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        bannerUrl:
+          type: ["string", "null"]
+        categories:
+          type: array
+          items:
+            type: string
+    PublicSellerProfile:
+      type: object
+      required: [profile, shop, listings]
+      properties:
+        profile:
+          $ref: "#/components/schemas/SellerProfile"
+        shop:
+          $ref: "#/components/schemas/SellerShop"
+        listings:
+          type: array
+          items:
+            $ref: "#/components/schemas/Listing"
+    SellerProfileInput:
+      type: object
+      required: [displayName, bio, city, shopName, shopDescription, categories]
+      properties:
+        displayName:
+          type: string
+          minLength: 2
+          maxLength: 80
+        bio:
+          type: string
+          maxLength: 500
+        city:
+          type: string
+          minLength: 2
+          maxLength: 80
+        avatarUrl:
+          type: string
+          maxLength: 500
+        shopName:
+          type: string
+          minLength: 2
+          maxLength: 100
+        shopDescription:
+          type: string
+          maxLength: 700
+        bannerUrl:
+          type: string
+          maxLength: 500
+        categories:
+          type: array
+          maxItems: 6
+          items:
+            type: string
+            minLength: 2
+            maxLength: 40
+    SellerVerificationRequest:
+      type: object
+      required: [id, userId, details, status, moderationNote, reviewerId, createdAt, updatedAt]
+      properties:
+        id:
+          type: number
+        userId:
+          type: string
+        details:
+          type: string
+        status:
+          type: string
+          enum: [pending, approved, rejected]
+        moderationNote:
+          type: ["string", "null"]
+        reviewerId:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    SellerVerificationRequestInput:
+      type: object
+      required: [details]
+      properties:
+        details:
+          type: string
+          minLength: 20
+          maxLength: 1000
+    SellerVerificationModerationInput:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [approved, rejected]
+        moderationNote:
+          type: string
+          maxLength: 500
+    SellerReportInput:
+      type: object
+      required: [targetUserId, reason]
+      properties:
+        targetUserId:
+          type: string
+          minLength: 1
+          maxLength: 128
+        reason:
+          type: string
+          enum: [fraude, fausse_annonce, harcelement, autre]
+        details:
+          type: string
+          maxLength: 1000
+    SellerReportReceipt:
+      type: object
+      required: [id, status, createdAt]
+      properties:
+        id:
+          type: number
+        status:
+          type: string
+          enum: [pending]
+        createdAt:
+          type: string
+          format: date-time
+    FeedPost:
+      type: object
+      required: [id, clientPostId, authorName, community, city, caption, category, createdAt]
+      properties:
+        id:
+          type: number
+        clientPostId:
+          type: string
+          pattern: "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$"
+        authorName:
+          type: string
+        community:
+          type: string
+        city:
+          type: string
+        caption:
+          type: string
+        category:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+    FeedPostInput:
+      type: object
+      required: [clientPostId, community, city, caption]
+      properties:
+        clientPostId:
+          type: string
+          pattern: "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$"
+        community:
+          type: string
+          minLength: 2
+          maxLength: 60
+        city:
+          type: string
+          minLength: 2
+          maxLength: 80
+        caption:
+          type: string
+          minLength: 1
+          maxLength: 700
+    FunVideo:
+      type: object
+      required: [id, clientVideoId, authorName, community, city, caption, videoUrl, contentType, durationSeconds, createdAt, moderationStatus, likedByViewer, commentsCount]
+      properties:
+        id:
+          type: number
+        clientVideoId:
+          type: string
+          pattern: "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$"
+        authorName:
+          type: string
+        community:
+          type: string
+        city:
+          type: string
+        caption:
+          type: string
+        videoUrl:
+          type: string
+        contentType:
+          type: string
+          enum: [video/mp4, video/webm, video/quicktime]
+        durationSeconds:
+          type: number
+        createdAt:
+          type: string
+          format: date-time
+        moderationStatus:
+          type: string
+          enum: [published]
+        likedByViewer:
+          type: boolean
+        commentsCount:
+          type: number
+    FunVideoInput:
+      type: object
+      required: [clientVideoId, community, city, caption, videoUrl, contentType, sizeBytes, durationSeconds]
+      properties:
+        clientVideoId:
+          type: string
+          pattern: "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$"
+        community:
+          type: string
+          minLength: 2
+          maxLength: 60
+        city:
+          type: string
+          minLength: 2
+          maxLength: 80
+        caption:
+          type: string
+          minLength: 1
+          maxLength: 500
+        videoUrl:
+          type: string
+          pattern: "^/objects/"
+        contentType:
+          type: string
+          enum: [video/mp4, video/webm, video/quicktime]
+        sizeBytes:
+          type: number
+          minimum: 1
+          maximum: 83886080
+        durationSeconds:
+          type: number
+          minimum: 1
+          maximum: 60
+    FunLikeResponse:
+      type: object
+      required: [liked]
+      properties:
+        liked:
+          type: boolean
+    FunComment:
+      type: object
+      required: [id, authorName, body, createdAt]
+      properties:
+        id:
+          type: number
+        authorName:
+          type: string
+        body:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+    FunCommentInput:
+      type: object
+      required: [body]
+      properties:
+        body:
+          type: string
+          minLength: 1
+          maxLength: 280
+    FunReportInput:
+      type: object
+      required: [reason]
+      properties:
+        reason:
+          type: string
+          enum: [harcelement, contenu_inapproprie, violence, autre]
+    FunReportReceipt:
+      type: object
+      required: [id, status, createdAt]
+      properties:
+        id:
+          type: number
+        status:
+          type: string
+          enum: [pending]
+        createdAt:
+          type: string
+          format: date-time
+    FunVideoUploadRequest:
+      type: object
+      required: [name, size, contentType]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        size:
+          type: number
+          minimum: 1          maximum: 83886080
+        contentType:
+          type: string
+          enum: [video/mp4, video/webm, video/quicktime]
+    FunVideoUploadResponse:
+      type: object
+      required: [uploadURL, objectPath, metadata]
+      properties:
+        uploadURL:
+          type: string
+          minLength: 1
+          maxLength: 2000
+        objectPath:
+          type: string
+          pattern: "^/objects/"
+        metadata:
+          type: object
+          required: [name, size, contentType]
+          properties:
+            name:
+              type: string
+            size:
+              type: number
+            contentType:
+              type: string
+              enum: [video/mp4, video/webm, video/quicktime]
+    FollowRequest:
+      type: object
+      required: [id, followerId, followingId, status, createdAt, updatedAt]
+      properties:
+        id:
+          type: number
+        followerId:
+          type: string
+        followingId:
+          type: string
+        status:
+          type: string
+          enum: [pending, accepted, rejected]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    FollowStatusResponse:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: ["string", "null"]
+          enum: [pending, accepted, rejected, null]
+    SearchProfile:
+      type: object
+      required: [userId, displayName, bio, city, avatarUrl]
+      properties:
+        userId:
+          type: string
+        displayName:
+          type: string
+        bio:
+          type: string
+        city:
+          type: string
+        avatarUrl:
+          type: ["string", "null"]
+    SearchResponse:
+      type: object
+      required: [type, posts, profiles]
+      properties:
+        type:
+          type: string
+          enum: [all, hashtag, user]
+        posts:
+          type: array
+          items:
+            $ref: "#/components/schemas/FeedPost"
+        profiles:
+          type: array
+          items:
+            $ref: "#/components/schemas/SearchProfile"
+    Streak:
+      type: object
+      required: [userId, streakCount, lastActiveAt, score, updatedAt]
+      properties:
+        userId:
+          type: string
+        streakCount:
+          type: number
+        lastActiveAt:
+          type: ["string", "null"]
+          format: date-time
+        score:
+          type: number
+        updatedAt:
+          type: string
+          format: date-time
+    RecordActivityInput:
+      type: object
+      required: [action]
+      properties:
+        action:
+          type: string
+          enum: [daily_visit, feed_post]
+    AccountTypeInput:
+      type: object
+      required: [accountType]
+      properties:
+        accountType:
+          type: string
+          enum: [user, agency, ong]
+        city:
+          type: string
+          minLength: 2
+          maxLength: 80
+    AccountTypeResponse:
+      type: object
+      required: [accountType, required, city]
+      properties:
+        accountType:
+          type: ["string", "null"]
+          enum: [user, agency, ong, null]
+        required:
+          type: boolean
+        city:
+          type: ["string", "null"]
+    LeaderboardEntry:
+      type: object
+      required: [rank, userId, displayName, city, avatarUrl, streakCount, score]
+      properties:
+        rank:
+          type: number
+        userId:
+          type: string
+        displayName:
+          type: string
+        city:
+          type: string
+        avatarUrl:
+          type: ["string", "null"]
+        streakCount:
+          type: number
+        score:
+          type: number
+    SellerReport:
+      type: object
+      required: [id, reporterId, targetUserId, reason, details, status, resolution, reviewerId, createdAt, updatedAt]
+      properties:
+        id:
+          type: number
+        reporterId:
+          type: string
+        targetUserId:
+          type: string
+        reason:
+          type: string
+          enum: [fraude, fausse_annonce, harcelement, autre]
+        details:
+          type: string
+        status:
+          type: string
+          enum: [pending, resolved, dismissed]
+        resolution:
+          type: ["string", "null"]
+        reviewerId:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    SellerReportModerationInput:
+      type: object
+      required: [status, resolution]
+      properties:
+        status:
+          type: string
+          enum: [resolved, dismissed]
+        resolution:
+          type: string
+          minLength: 5
+          maxLength: 1000
+    GiftPlan:
+      type: string
+      enum: [VIP_BRONZE, VIP_OR]
+    GiftStatus:
+      type: string
+      enum: [PENDING_PAYMENT, PAID, REDEEMED, EXPIRED, CANCELLED]
+    MembershipPayment:
+      type: object
+      required: [transactionId, mynitaTransactionId, plan, amount, durationMonths, status, processedAt]
+      properties:
+        transactionId:
+          type: string
+        mynitaTransactionId:
+          type: ["string", "null"]
+        plan:
+          type: string
+          enum: [VIP_BRONZE, VIP_OR]
+        amount:
+          type: number
+          minimum: 0
+        durationMonths:
+          type: integer
+          enum: [1, 2, 4]
+        status:
+          type: string
+          enum: [PENDING, SUCCEEDED, SIMULATION, FAILED, CANCELLED]
+        processedAt:
+          type: string
+          format: date-time
+    Gift:
+      type: object
+      required: [id, direction, toPhone, plan, amount, durationMonths, status, code, transactionId, expiresAt, createdAt, paidAt, redeemedAt]
+      properties:
+        id:
+          type: string
+        direction:
+          type: string
+          enum: [sent, received]
+        toPhone:
+          type: string
+        plan:
+          $ref: "#/components/schemas/GiftPlan"
+        amount:
+          type: number
+        durationMonths:
+          type: integer
+          enum: [1, 2, 4]
+        status:
+          $ref: "#/components/schemas/GiftStatus"
+        code:
+          type: string
+        transactionId:
+          type: string
+        expiresAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        paidAt:
+          type: ["string", "null"]
+          format: date-time
+        redeemedAt:
+          type: ["string", "null"]
+          format: date-time
+    GiftsResponse:
+      type: array
+      items:
+        $ref: "#/components/schemas/Gift"
+    GiftInput:
+      type: object
+      required: [toPhone, plan, durationMonths]
+      properties:
+        toPhone:
+          type: string
+          minLength: 8
+          maxLength: 20
+        plan:
+          $ref: "#/components/schemas/GiftPlan"
+        durationMonths:
+          type: integer
+          enum: [1, 2, 4]
+    GiftPaymentResponse:
+      type: object
+      required: [gift, redirectUrl]
+      properties:
+        gift:
+          $ref: "#/components/schemas/Gift"
+        redirectUrl:
+          type: string
+          minLength: 1
+    GiftPaymentReturnInput:
+      type: object
+      required: [transactionId, plan, amount, status, currency]
+      properties:
+        giftId:
+          type: string
+        transactionId:
+          type: string
+        mynitaTransactionId:
+          type: string
+        paymentId:
+          type: string
+        plan:
+          $ref: "#/components/schemas/GiftPlan"
+        amount:
+          type: number
+        durationMonths:
+          type: integer
+          enum: [1, 2, 4]
+        status:
+          type: string
+        currency:
+          type: string
+    GiftPaymentReturnResponse:
+      type: object
+      required: [ok, applied, recipientActivated, gift]
+      properties:
+        ok:
+          type: boolean
+        applied:
+          type: boolean
+        recipientActivated:
+          type: boolean
+        gift:
+          $ref: "#/components/schemas/Gift"
+    GiftRedeemInput:
+      type: object
+      required: [code]
+      properties:
+        code:
+          type: string
+          minLength: 6
+          maxLength: 20
+    GiftMembership:
+      type: object
+      required: [status, trialEndsAt, isVip, plan, boostsRemaining, boostLimit]
+      properties:
+        status:
+          type: string
+          enum: [VIP_BRONZE, VIP_OR]
+        trialEndsAt:
+          type: string
+          format: date-time
+        isVip:
+          type: boolean
+        plan:
+          type: string
+          enum: [vip_bronze, vip_or]
+        boostsRemaining:
+          type: number
+        boostLimit:
+          type: number
+    GiftRedeemResponse:
+      type: object
+      required: [gift, membership]
+      properties:
+        gift:
+          $ref: "#/components/schemas/Gift"
+        membership:
+          $ref: "#/components/schemas/GiftMembership"
+    ReferralStats:
+      type: object
+      required: [code, shareUrl, referralCount, activeWeeks, totalWeeksEarned, maxWeeks, canClaim]
+      properties:
+        code:
+          type: string
+          pattern: "^[A-F0-9]{8}$"
+        shareUrl:
+          type: string
+          description: Lien partageable généré par PAYLOCA
+        referralCount:
+          type: number
+          minimum: 0
+        activeWeeks:
+          type: number
+          minimum: 0
+        totalWeeksEarned:
+          type: number
+          minimum: 0
+        maxWeeks:
+          type: number
+          minimum: 20
+        canClaim:
+          type: boolean
+    ReferralClaimInput:
+      type: object
+      required: [code]
+      properties:
+        code:
+          type: string
+          minLength: 8
+          maxLength: 8
+          pattern: "^[A-Fa-f0-9]{8}$"
+    ReferralClaimResponse:
+      allOf:
+        - $ref: "#/components/schemas/ReferralStats"
+        - type: object
+          required: [referrerWeeks, referredWeeks]
+          properties:
+            referrerWeeks:
+              type: number
+              minimum: 0
+              maximum: 2
+            referredWeeks:
+              type: number
+              minimum: 0
+              maximum: 1
