@@ -34,8 +34,10 @@ import {
   type AuthenticatedRequest,
 } from "../middlewares/requireAuth";
 import { verifyFirebaseIdToken } from "../lib/firebaseAdmin";
+
 const router: IRouter = Router();
 const storage = new ObjectStorageService();
+
 const allowedImageTypes = new Set([
   "image/jpeg",
   "image/png",
@@ -43,12 +45,14 @@ const allowedImageTypes = new Set([
   "image/gif",
 ]);
 const maxImageSize = 10 * 1024 * 1024;
+
 const allowedVideoTypes = new Set([
   "video/mp4",
   "video/webm",
   "video/quicktime",
 ]);
 const maxVideoSize = 80 * 1024 * 1024;
+
 export async function isPublicSellerImage(
   objectPath: string,
   sellerProfileOwnerId: string | null,
@@ -97,6 +101,7 @@ export async function isPublicSellerImage(
     .limit(1);
   return Boolean(shop);
 }
+
 export async function canAccessFunMedia(
   userId: string,
 ): Promise<boolean> {
@@ -115,59 +120,132 @@ export async function canAccessFunMedia(
     .limit(1);
   return profile?.accountType === "user";
 }
+
+/**
+ * POST /storage/uploads/request-url
+ * Génère une URL signée pour l'upload direct vers Supabase Storage
+ */
 router.post(
   "/storage/uploads/request-url",
   requireAuth,
-  async (req, res): Promise<void> => {
-    const parsed =
-      RequestUploadUrlBody.safeParse(
-        req.body,
-      );
-    if (
-     !parsed.success ||
-      !allowedImageTypes.has(
-        parsed.data.contentType,
-      ) ||
-      parsed.data.size > maxImageSize
-    ) {
-      res.status(400).json({
-        error:
-          "Image invalide. Utilisez JPG, PNG, WebP ou GIF de 10 Mo maximum.",
-      });
-      return;
-    }
-    
+  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
-      const {
-        name,
-        size,
-        contentType
-      } = parsed.data
+      // Validation des variables d'environnement REQUISES
+      const supabaseUrl = process.env["SUPABASE_URL"];
+      const supabaseServiceKey =
+        process.env["SUPABASE_SERVICE_ROLE_KEY"];
 
-      // 1. Générer un nom de fichier unique
-      const fileExt = name.split('.').pop()
-      const fileName = `${req.user.id}/${crypto.randomUUID()}.${fileExt}`
-      const bucket = 'annonces' // crée ce bucket sur Supabase
-
-      // 2. Demander une URL signée à Supabase pour upload direct
-      const { data, error } = await supabase.storage
-        .from(bucket)
-        .createSignedUploadUrl(fileName)
-
-      if (error) {
-        throw error
+      if (!supabaseUrl || !supabaseServiceKey) {
+        console.error(
+          "Variables Supabase manquantes",
+        );
+        res.status(500).json({
+          error:
+            "Configuration serveur manquante",
+        });
+        return;
       }
 
-      // 3. Renvoyer l'URL au frontend
-      res.json({
-        uploadUrl: data.signedUrl,
-        path: data.path,
-        publicUrl: `${process.env.SUPABASE_URL}/storage/v1/object/public/${bucket}/${fileName}`
-      })
-      
-    } catch (error: any) {
-      console.error(error)
-      res.status(500).json({ error: "Erreur génération URL upload" })
+      // Validation du body
+      const parsed = RequestUploadUrlBody.safeParse(
+        req.body,
+      );
+
+      if (!parsed.success) {
+        res.status(400).json({
+          error:
+            "Données invalides. Requis: contentType, size, name",
+        });
+        return;
+      }
+
+      const { contentType, size, name } =
+        parsed.data;
+
+      // Validation du type d'image
+      if (
+        !allowedImageTypes.has(contentType)
+      ) {
+        res.status(400).json({
+          error:
+            "Image invalide. Utilisez JPG, PNG, WebP ou GIF de 10 Mo maximum.",
+        });
+        return;
+      }
+
+      // Validation de la taille
+      if (size > maxImageSize) {
+        res.status(400).json({
+          error: "La photo ne doit pas dépasser 10 Mo.",
+        });
+        return;
+      }
+
+      // Génération du nom de fichier unique avec UUID
+      const fileExt =
+        name.split(".").pop() || "jpg";
+      const fileName = `${req.user!.id}/${crypto.randomUUID()}.${fileExt}`;
+      const bucket = "annonces";
+
+      try {
+        // Utiliser l'API Supabase REST pour générer l'URL signée
+        const signedUrlResponse = await fetch(
+          `${supabaseUrl}/storage/v1/object/sign/${bucket}/${fileName}`,
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${supabaseServiceKey}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              expiresIn: 3600, // URL valide 1 heure
+            }),
+          }
+        );
+
+        if (!signedUrlResponse.ok) {
+          const errorData =
+            await signedUrlResponse.json();
+          console.error(
+            "Erreur Supabase API:",
+            errorData,
+          );
+          res.status(500).json({
+            error:
+              "Impossible de générer l'URL d'upload",
+          });
+          return;
+        }
+
+        const { signedURL } =
+          await signedUrlResponse.json();
+
+        // Renvoyer les URLs au frontend
+        res.status(200).json({
+          uploadURL: signedURL,
+          objectPath: `/objects/${bucket}/${fileName}`,
+          publicUrl: `${supabaseUrl}/storage/v1/object/public/${bucket}/${fileName}`,
+        });
+      } catch (supabaseError) {
+        console.error(
+          "Erreur API Supabase:",
+          supabaseError,
+        );
+        res.status(500).json({
+          error:
+            "Erreur lors de la génération de l'URL",
+        });
+      }
+    } catch (error: unknown) {
+      console.error(
+        "Erreur non gérée dans /storage/uploads/request-url:",
+        error,
+      );
+      res.status(500).json({
+        error: "Erreur serveur",
+      });
     }
   }
-) 
+);
+
+export default router;
