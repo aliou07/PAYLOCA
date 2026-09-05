@@ -1,19 +1,30 @@
 {
-  "name": "payloca",
-  "version": "1.0.0",
-  "private": true,
+  "name": "workspace",
+  "version": "0.0.0",
+  "license": "MIT",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview --host 0.0.0.0 --port $PORT"
+    "preinstall": "sh -c 'rm -f package-lock.json yarn.lock; case \"$npm_config_user_agent\" in pnpm/*) ;; *) echo \"Use pnpm instead\" >&2; exit 1 ;; esac'",
+    "build": "pnpm run typecheck && pnpm -r --if-present run build",
+    "typecheck:libs": "tsc --build",
+    "typecheck": "pnpm run typecheck:libs && pnpm -r --filter \"./artifacts/**\" --filter \"./scripts\" --if-present run typecheck"
   },
+  "pnpm": {
+    "overrides": {
+      "brace-expansion@5.0.8": "5.0.9",
+      "fast-uri": "3.1.5",
+      "js-yaml": "4.3.1",
+      "nanoid": "3.3.18",
+      "uuid": "11.1.1",
+      "esbuild@0.18.20": "0.25.12",
+      "esbuild@0.27.3": "0.28.2"
+    }
+  },
+  "private": true,
   "dependencies": {
-    "@supabase/supabase-js": "^2.45.4",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "@replit/connectors-sdk": "^0.4.1"
   },
   "devDependencies": {
-    "vite": "^5.4.0",
-    "@vitejs/plugin-react": "^4.6.1"
+    "prettier": "^3.9.6",
+    "typescript": "~5.9.3"
   }
 }
