@@ -81,7 +81,11 @@ export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
     setMembershipError(null);
     try {
       const response = await authenticatedFetch('/api/membership');
-      const payload = await response.json().catch(() => ({})) as Partial<AuthState['membership']> & { error?: string };
+      const payload = await response.json().catch(() => ({})) as Partial<AuthState['membership']> & {
+        error?: string;
+        isAdministrator?: unknown;
+        isModerator?: unknown;
+      };
       if (!response.ok) throw new Error(payload.error ?? 'Impossible de charger votre abonnement.');
       if (
         (payload.status !== 'ESSAI_VIP_GRATUIT' && payload.status !== 'LECTURE_GRATUITE'
@@ -104,6 +108,7 @@ export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
       } as AuthState['membership'];
       if (requestId === membershipRequest.current && firebaseAuth?.currentUser?.uid === currentUser.uid) {
         setMembership(serverMembership);
+        setIsModerator(payload.isModerator === true || payload.isAdministrator === true);
         setMembershipConfirmed(true);
       }
     } catch (error: unknown) {
