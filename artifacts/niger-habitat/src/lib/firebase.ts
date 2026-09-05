@@ -24,6 +24,23 @@ export const firebaseAuth = firebaseApp ? getAuth(firebaseApp) : null;
 export async function registerPaylocaServiceWorker() {
   if (!('serviceWorker' in navigator)) return null;
   const base = import.meta.env.BASE_URL || '/';
+  if (import.meta.env.DEV) {
+    const registrations = await navigator.serviceWorker.getRegistrations();
+    await Promise.all(
+      registrations
+        .filter((registration) => registration.scope.startsWith(window.location.origin + base))
+        .map((registration) => registration.unregister()),
+    );
+    if ('caches' in window) {
+      const cacheKeys = await caches.keys();
+      await Promise.all(
+        cacheKeys
+          .filter((key) => key.startsWith('payloca-public-'))
+          .map((key) => caches.delete(key)),
+      );
+    }
+    return null;
+  }
   return navigator.serviceWorker.register(`${base}service-worker.js`, { scope: base });
 }
 
