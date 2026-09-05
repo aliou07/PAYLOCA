@@ -1,3 +1,6 @@
+## `artifacts/niger-habitat/src/pages/search.tsx`
+
+```tsx
 import { useEffect, useState } from "react";
 import { Link } from "wouter";
 import { Loader2, Search as SearchIcon, UserPlus, Check, Hash } from "lucide-react";
@@ -97,7 +100,8 @@ export default function SearchPage() {
               <div className="mt-4 grid gap-4 md:grid-cols-2">
                 {result.profiles.map((profile) => (
                   <article key={profile.userId} className="flex items-center gap-4 rounded-2xl border border-[#dfd7c4] bg-[#faf6ec] p-4 shadow-[0_3px_0_#e8deca]">
-                    <Link href={`/profil/${encodeURIComponent(profile.userId)}`} className="grid size-14 shrink-0 place-items-center overflow-hidden rounded-2xl bg-[#e8ddc6] text-lg font-bold text-[#596071]">                      {profile.avatarUrl ? <img src={imageSource(profile.avatarUrl)} alt="" className="size-full object-cover" /> : profile.displayName.slice(0, 2).toUpperCase()}
+                    <Link href={`/profil/${encodeURIComponent(profile.userId)}`} className="grid size-14 shrink-0 place-items-center overflow-hidden rounded-2xl bg-[#e8ddc6] text-lg font-bold text-[#596071]">
+                      {profile.avatarUrl ? <img src={imageSource(profile.avatarUrl)} alt="" className="size-full object-cover" /> : profile.displayName.slice(0, 2).toUpperCase()}
                     </Link>
                     <div className="min-w-0 flex-1">
                       <Link href={`/profil/${encodeURIComponent(profile.userId)}`} className="block truncate font-bold text-[#20283c] hover:text-[#b95740]">{profile.displayName}</Link>
@@ -128,3 +132,4 @@ export default function SearchPage() {
     </div>
   );
 }
+```
