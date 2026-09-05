@@ -1,12 +1,16 @@
 {
   "extends": "./tsconfig.base.json",
-  "compilerOptions": { "composite": true },
+  "compileOnSave": false,
+  "files": [],
   "references": [
-    { "path": "./lib/db" },
-    { "path": "./lib/api-client-react" },
-    { "path": "./lib/api-spec" },
-    { "path": "./lib/api-zod" },
-    { "path": "./artifacts/api-server" },
-    { "path": "./artifacts/niger-habitat" }
+    {
+      "path": "./lib/db"
+    },
+    {
+      "path": "./lib/api-client-react"
+    },
+    {
+      "path": "./lib/api-zod"
+    }
   ]
 }
