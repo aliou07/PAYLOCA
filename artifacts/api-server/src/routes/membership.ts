@@ -7,11 +7,26 @@ import { hasValidPaymentSignature } from "../lib/paymentSecurity";
 import { ListMembershipPaymentsResponse } from "@workspace/api-zod";
 
 const router: IRouter = Router();
-
 router.get("/membership", requireAuth, async (req, res): Promise<void> => {
   try {
-    const membership = await getOrCreateMembership((req as AuthenticatedRequest).userId);
-    res.json({ ...membership, trialEndsAt: membership.trialEndsAt.toISOString() });
+    const authenticated = req as AuthenticatedRequest;
+    const membership = await getOrCreateMembership(authenticated.userId);
+    const effectiveMembership = authenticated.isAdministrator
+      ? {
+          ...membership,
+          status: "BOSS_VIP" as const,
+          isVip: true,
+          plan: "vip_or" as const,
+          boostsRemaining: 200,
+          boostLimit: 200,
+        }
+      : membership;
+    res.json({
+      ...effectiveMembership,
+      trialEndsAt: effectiveMembership.trialEndsAt.toISOString(),
+      isAdministrator: authenticated.isAdministrator,
+      isModerator: authenticated.isModerator,
+    });
   } catch {
     res.status(503).json({ error: "Le statut d’abonnement est momentanément indisponible." });
   }
@@ -37,6 +52,25 @@ router.get("/membership/payments", requireAuth, async (req, res): Promise<void> 
 });
 
 router.post("/membership/simulation", requireAuth, async (req, res): Promise<void> => {
+  const authenticated = req as AuthenticatedRequest;
+  if (authenticated.isAdministrator) {
+    const membership = await getOrCreateMembership(authenticated.userId);
+    res.status(200).json({
+      mode: "ADMIN",
+      message: "Accès administrateur VIP gratuit activé. Aucun paiement n’a été effectué.",
+      transactionId: "ADMIN_FREE_ACCESS",
+      membership: {
+        ...membership,
+        status: "BOSS_VIP" as const,
+        isVip: true,
+        plan: "vip_or" as const,
+        boostsRemaining: 200,
+        boostLimit: 200,
+        trialEndsAt: membership.trialEndsAt.toISOString(),
+      },
+    });
+    return;
+  }
   if (PAYMENT_MODE !== "TEST") {
     res.status(503).json({ error: "Le Mode Mynita Réel n’est pas encore configuré." });
     return;
@@ -48,7 +82,7 @@ router.post("/membership/simulation", requireAuth, async (req, res): Promise<voi
     return;
   }
   try {
-    const result = await applySimulationPayment((req as AuthenticatedRequest).userId, plan, durationMonths);
+    const result = await applySimulationPayment(authenticated.userId, plan, durationMonths);
     res.status(201).json({
       mode: "TEST",
       message: "✅ Paiement Simulation Réussi! Merci",
@@ -61,6 +95,10 @@ router.post("/membership/simulation", requireAuth, async (req, res): Promise<voi
 });
 
 router.post("/membership/payment", requireAuth, async (req, res): Promise<void> => {
+  if ((req as AuthenticatedRequest).isAdministrator) {
+    res.status(403).json({ error: "Votre compte administrateur dispose déjà d’un accès VIP gratuit. Aucun paiement n’est nécessaire." });
+    return;
+  }
   if (process.env.PAYMENT_MODE !== "REEL") {
     res.status(503).json({ error: "Le paiement Mynita réel n’est pas configuré." });
     return;
