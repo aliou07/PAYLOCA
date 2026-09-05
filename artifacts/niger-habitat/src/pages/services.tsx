@@ -1,9 +1,9 @@
 import { useState, useMemo, useEffect, useRef, type FormEvent } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import {
-  useListServiceProviders,
-  useListServiceOrders,
-  useCreateServiceOrder,
+import { 
+  useListServiceProviders, 
+  useListServiceOrders, 
+  useCreateServiceOrder, 
   useCreateServiceReview,
   getListServiceProvidersQueryKey,
   getListServiceOrdersQueryKey
@@ -11,9 +11,9 @@ import {
 import type { ServiceProvider, ServiceOrder } from '@workspace/api-client-react';
 import { usePaylocaAuth } from '@/auth/firebaseAuth';
 import { Link } from 'wouter';
-import {
-  ShieldCheck, Star, MapPin, Search, X, Loader2,
-  CheckCircle2, AlertCircle
+import { 
+  ShieldCheck, Star, MapPin, Search, X, Loader2, 
+  CheckCircle2, AlertCircle 
 } from 'lucide-react';
 
 function imageSource(path: string) {
@@ -40,15 +40,15 @@ function PageHeader() {
   );
 }
 
-function BaseModal({
-  isOpen,
-  onClose,
-  title,
-  children
-}: {
-  isOpen: boolean;
-  onClose: () => void;
-  title: string;
+function BaseModal({ 
+  isOpen, 
+  onClose, 
+  title, 
+  children 
+}: { 
+  isOpen: boolean; 
+  onClose: () => void; 
+  title: string; 
   children: React.ReactNode;
 }) {
   const onCloseRef = useRef(onClose);
@@ -66,15 +66,15 @@ function BaseModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-4 backdrop-blur-sm transition-all duration-200">
-      <div
+      <div 
         className="relative w-full max-w-lg overflow-hidden rounded-[22px] border border-border bg-card shadow-2xl rise-in"
         onClick={e => e.stopPropagation()}
       >
         <div className="flex items-center justify-between border-b border-border p-5">
           <h2 className="font-display text-lg font-bold text-foreground">{title}</h2>
-          <button
+          <button 
             type="button"
-            onClick={onClose}
+            onClick={onClose} 
             className="rounded-full p-2 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
           >
             <X size={18} />
@@ -88,19 +88,20 @@ function BaseModal({
   );
 }
 
-function OrderModal({
-  provider,
-  isOpen,
-  onClose,
-  isSignedIn
-}: {
-  provider: ServiceProvider | null;
-  isOpen: boolean;
-  onClose: () => void;
-  isSignedIn: boolean;}) {
+function OrderModal({ 
+  provider, 
+  isOpen, 
+  onClose, 
+  isSignedIn 
+}: { 
+  provider: ServiceProvider | null; 
+  isOpen: boolean; 
+  onClose: () => void; 
+  isSignedIn: boolean; 
+}) {
   const queryClient = useQueryClient();
   const createOrder = useCreateServiceOrder();
-
+  
   const [service, setService] = useState('');
   const [details, setDetails] = useState('');
   const [isSuccess, setIsSuccess] = useState(false);
@@ -159,7 +160,7 @@ function OrderModal({
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     if (!service.trim() || createOrder.isPending) return;
-
+    
     createOrder.mutate({
       data: {
         providerId: provider.id,
@@ -183,12 +184,12 @@ function OrderModal({
             Ce prestataire est affiché avec un statut certifié PAYLOCA. Les modalités et le prix final sont à convenir avant toute intervention.
           </p>
         </div>
-
+        
         <div className="space-y-2">
           <label htmlFor="service-type" className="text-sm font-semibold text-foreground flex items-center gap-1.5">
             De quoi avez-vous besoin ? <span className="text-destructive">*</span>
           </label>
-          <input
+          <input 
             id="service-type"
             type="text"
             required
@@ -203,7 +204,7 @@ function OrderModal({
           <label htmlFor="service-details" className="text-sm font-semibold text-foreground">
             Détails supplémentaires <span className="text-muted-foreground font-normal">(Optionnel)</span>
           </label>
-          <textarea
+          <textarea 
             id="service-details"
             rows={3}
             placeholder="Décrivez brièvement le problème..."
@@ -220,8 +221,8 @@ function OrderModal({
           </div>
         )}
 
-        <button
-          type="submit"
+        <button 
+          type="submit" 
           disabled={!service.trim() || createOrder.isPending}
           className="payloca-button mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3.5 font-bold text-primary-foreground disabled:opacity-50 disabled:pointer-events-none"
         >
@@ -232,22 +233,22 @@ function OrderModal({
   );
 }
 
-function ReviewModal({
-  provider,
-  isOpen,
-  onClose,
+function ReviewModal({ 
+  provider, 
+  isOpen, 
+  onClose, 
   orders,
-  isSignedIn
-}: {
-  provider: ServiceProvider | null;
-  isOpen: boolean;
+  isSignedIn 
+}: { 
+  provider: ServiceProvider | null; 
+  isOpen: boolean; 
   onClose: () => void;
   orders: ServiceOrder[] | undefined;
   isSignedIn: boolean;
 }) {
   const queryClient = useQueryClient();
   const createReview = useCreateServiceReview();
-
+  
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState('');
   const [isSuccess, setIsSuccess] = useState(false);
@@ -291,12 +292,13 @@ function ReviewModal({
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     if (!pastOrder || createReview.isPending) return;
-
+    
     createReview.mutate({
       id: provider.id,
       data: {
         orderId: pastOrder.id,
-        rating,        comment: comment.trim() || undefined
+        rating,
+        comment: comment.trim() || undefined
       }
     }, {
       onSuccess: () => {
@@ -323,9 +325,9 @@ function ReviewModal({
                 onClick={() => setRating(star)}
                 className="transition-transform hover:scale-110 active:scale-95"
               >
-                <Star
-                  size={36}
-                  className={star <= rating ? "fill-secondary text-secondary" : "fill-transparent text-muted-foreground/30"}
+                <Star 
+                  size={36} 
+                  className={star <= rating ? "fill-secondary text-secondary" : "fill-transparent text-muted-foreground/30"} 
                 />
               </button>
             ))}
@@ -336,7 +338,7 @@ function ReviewModal({
           <label htmlFor="review-comment" className="text-sm font-semibold text-foreground">
             Votre commentaire <span className="text-muted-foreground font-normal">(Optionnel)</span>
           </label>
-          <textarea
+          <textarea 
             id="review-comment"
             rows={4}
             placeholder="Partagez votre expérience avec la communauté PAYLOCA..."
@@ -353,8 +355,8 @@ function ReviewModal({
           </div>
         )}
 
-        <button
-          type="submit"
+        <button 
+          type="submit" 
           disabled={createReview.isPending}
           className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-foreground py-3.5 font-bold text-background disabled:opacity-50 disabled:pointer-events-none"
         >
@@ -393,15 +395,15 @@ function ProviderSkeleton() {
   );
 }
 
-function ProviderCard({
-  provider,
-  onOrder,
-  onReview,
-  canReview
-}: {
-  provider: ServiceProvider;
-  onOrder: () => void;
-  onReview: () => void;
+function ProviderCard({ 
+  provider, 
+  onOrder, 
+  onReview, 
+  canReview 
+}: { 
+  provider: ServiceProvider; 
+  onOrder: () => void; 
+  onReview: () => void; 
   canReview: boolean;
 }) {
   const photoUrl = provider.photo ? imageSource(provider.photo) : null;
@@ -410,7 +412,7 @@ function ProviderCard({
   return (
     <div className="group relative flex flex-col overflow-hidden rounded-[22px] border border-border bg-card/80 shadow-sm backdrop-blur-md transition-all hover:border-primary/50 hover:shadow-md">
       <div className="p-5 flex-1 flex flex-col gap-4">
-
+        
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-3">
             {photoUrl ? (
@@ -438,7 +440,7 @@ function ProviderCard({
             <MapPin size={15} className="text-primary shrink-0" /> <span className="line-clamp-1">{provider.city}, {provider.neighborhood}</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <Star size={15} className={`shrink-0 ${provider.rating > 0 ? "fill-secondary text-secondary" : "text-muted-foreground"}`} />
+            <Star size={15} className={`shrink-0 ${provider.rating > 0 ? "fill-secondary text-secondary" : "text-muted-foreground"}`} /> 
             {provider.rating > 0 ? (
               <span className="font-semibold text-foreground">{provider.rating.toFixed(1)} <span className="text-muted-foreground font-normal">({provider.reviewCount} avis)</span></span>
             ) : (
@@ -457,18 +459,18 @@ function ProviderCard({
           <span className="text-xs text-muted-foreground">Tarif indicatif</span>
           <span className="font-bold text-foreground">{provider.priceFrom.toLocaleString('fr-FR')} FCFA</span>
         </div>
-
+        
         <div className="flex flex-col gap-2">
-          <button
+          <button 
             onClick={onOrder}
             disabled={!provider.available}
             className="payloca-button w-full rounded-xl bg-primary py-2.5 text-sm font-bold text-primary-foreground disabled:opacity-50 disabled:pointer-events-none"
           >
             {provider.available ? "Demander ce service" : "Indisponible"}
           </button>
-
+          
           {canReview && (
-            <button
+            <button 
               onClick={onReview}
               className="w-full rounded-xl border border-border bg-transparent py-2 text-xs font-bold text-foreground hover:bg-muted transition-colors"
             >
@@ -485,12 +487,12 @@ export default function ServicesPage() {
   const auth = usePaylocaAuth();
   const isSignedIn = auth?.isSignedIn ?? false;
   const isLoaded = auth?.isLoaded ?? true;
-
+  
   const [searchCategory, setSearchCategory] = useState('');
   const [searchCity, setSearchCity] = useState('');
 
   const { data: providers, isLoading: providersLoading, isError: providersError, refetch: refetchProviders } = useListServiceProviders();
-
+  
   const { data: orders } = useListServiceOrders({
     query: { queryKey: getListServiceOrdersQueryKey(), enabled: !!isSignedIn && isLoaded }
   });
@@ -515,14 +517,14 @@ export default function ServicesPage() {
   return (
     <>
       <PageHeader />
-
+      
       <div className="page-shell py-12 md:py-16">
         <div className="mb-10 flex flex-col gap-4 sm:flex-row sm:items-center">
           <div className="relative flex-1">
             <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <input
+            <input 
               type="text"
-              placeholder="Quelle catégorie de service recherchez-vous ? (ex: Plomberie)"
+              placeholder="Quelle catégorie de service recherchez-vous ? (ex: Plomberie)" 
               className="w-full rounded-xl border border-border bg-card py-3 pl-11 pr-4 text-sm font-semibold text-foreground outline-none focus-visible:border-primary"
               value={searchCategory}
               onChange={(e) => setSearchCategory(e.target.value)}
@@ -576,9 +578,9 @@ export default function ServicesPage() {
         ) : (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {filteredProviders.map(provider => (
-              <ProviderCard
-                key={provider.id}
-                provider={provider}
+              <ProviderCard 
+                key={provider.id} 
+                provider={provider} 
                 onOrder={() => { setSelectedProvider(provider); setActiveModal('order'); }}
                 onReview={() => { setSelectedProvider(provider); setActiveModal('review'); }}
                 canReview={!!orders?.some(o => o.providerId === provider.id && o.status === 'terminee')}
@@ -588,14 +590,15 @@ export default function ServicesPage() {
         )}
       </div>
 
-      <OrderModal
+      <OrderModal 
         provider={activeModal === 'order' ? selectedProvider : null}
         isOpen={activeModal === 'order'}
         onClose={closeModals}
         isSignedIn={isSignedIn}
       />
 
-      <ReviewModal        provider={activeModal === 'review' ? selectedProvider : null}
+      <ReviewModal 
+        provider={activeModal === 'review' ? selectedProvider : null}
         isOpen={activeModal === 'review'}
         onClose={closeModals}
         orders={orders}
