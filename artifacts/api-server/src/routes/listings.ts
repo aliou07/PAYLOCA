@@ -210,7 +210,9 @@ router.post("/listings/:id/boost", requireAuth, async (req, res): Promise<void> 
         Object.assign(membership, resetMembership);
       }
     }
-    const plan = planForMembershipStatus(membership.status as Parameters<typeof planForMembershipStatus>[0]);
+    const plan = (req as AuthenticatedRequest).isAdministrator
+      ? "vip_or"
+      : planForMembershipStatus(membership.status as Parameters<typeof planForMembershipStatus>[0]);
     const limit = boostLimitForPlan(plan);
     if (!limit) return { kind: "no_plan" as const, plan };
     if (listing.premiumUntil && listing.premiumUntil > now) {
