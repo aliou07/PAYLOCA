@@ -7,7 +7,7 @@ import { Link } from 'wouter';
 
 export default function SosPage() {
   const { user, isSignedIn } = usePaylocaAuth();
-
+  
   const [storedContacts, setContacts] = useState<SosContact[]>([]);
   const activeUserId = useRef<string | null>(user?.id ?? null);
   activeUserId.current = user?.id ?? null;
@@ -115,11 +115,11 @@ export default function SosPage() {
   const executeSos = useCallback(() => {
     stopPress();
     if (selectedContacts.length === 0) return;
-
+    
     if (typeof navigator !== 'undefined' && navigator.vibrate) {
       try { navigator.vibrate([200, 100, 200]); } catch { /* ignore */ }
     }
-
+    
     if (allowGeo && 'geolocation' in navigator) {
       setSosState('locating');
       setLocationError('');
@@ -133,7 +133,7 @@ export default function SosPage() {
         },
         (err) => {
           setLocationError('Position introuvable ou refusée par votre appareil.');
-          setSosState('idle');
+          setSosState('idle'); 
         },
         { timeout: 10000, maximumAge: 0, enableHighAccuracy: true }
       );
@@ -147,7 +147,7 @@ export default function SosPage() {
     stopPress();
     isPressing.current = true;
     startTime.current = Date.now();
-
+    
     const updateProgress = () => {
       const elapsed = Date.now() - startTime.current;
       const progress = Math.min(100, (elapsed / 3000) * 100);
@@ -157,7 +157,7 @@ export default function SosPage() {
       }
     };
     animationFrame.current = requestAnimationFrame(updateProgress);
-
+    
     pressTimer.current = window.setTimeout(() => {
       if (!isPressing.current || Date.now() - startTime.current < 3000) return;
       executeSos();
@@ -168,14 +168,14 @@ export default function SosPage() {
     if (e.button !== 0 && e.pointerType === 'mouse') return;
     startPress();
   };
-
+  
   const onKeyDown = (e: KeyboardEvent) => {
     if (e.key === ' ' || e.key === 'Enter') {
       e.preventDefault();
       if (!pressTimer.current) startPress();
     }
   };
-
+  
   const onKeyUp = (e: KeyboardEvent) => {
     if (e.key === ' ' || e.key === 'Enter') stopPress();
   };
@@ -221,7 +221,7 @@ export default function SosPage() {
               <h2 className="text-xl font-bold text-[#20283c]">1. Vos contacts</h2>
               <span className="rounded-full bg-[#f4efdf] px-3 py-1 text-xs font-bold text-[#596071] border border-[#d9cfbc]">{contacts.length}/5</span>
             </div>
-
+            
             <div className="space-y-3">
               {contacts.map(c => (
                 <div key={c.id} className="flex items-center justify-between rounded-xl border border-[#d9cfbc] bg-[#faf6ec] p-4 shadow-sm">
@@ -234,7 +234,7 @@ export default function SosPage() {
                   </button>
                 </div>
               ))}
-
+              
               {contacts.length === 0 && (
                 <div className="rounded-2xl border-2 border-dashed border-[#d9cfbc] p-8 text-center text-[#596071]">
                   <p className="font-medium text-sm">Aucun contact enregistré.</p>
@@ -242,7 +242,7 @@ export default function SosPage() {
                 </div>
               )}
             </div>
-
+            
             {contactError && <p role="alert" className="mt-3 text-sm font-bold text-[#d93f2c] flex items-center gap-1.5"><AlertTriangle size={14} />{contactError}</p>}
 
             {contacts.length < 5 && (
@@ -265,7 +265,7 @@ export default function SosPage() {
 
           <section className="border-t border-[#dfd7c4] pt-10">
             <h2 className="text-xl font-bold text-[#20283c] mb-6">2. Préparer l'alerte</h2>
-
+            
             {sosState === 'idle' && (
               <div className="space-y-6">
                 <div className="rounded-2xl border border-[#d9cfbc] bg-[#faf6ec] p-5 shadow-sm">
@@ -297,12 +297,13 @@ export default function SosPage() {
                 {locationError && (
                   <div role="alert" className="rounded-2xl border border-[#dca79b] bg-[#fff1ec] p-5 shadow-sm animate-in slide-in-from-top-2">
                     <p className="text-sm font-bold text-[#9d3526] flex items-center gap-2"><AlertTriangle size={18} /> {locationError}</p>
-                    <button type="button" onClick={prepareWithoutLocation} className="mt-4 rounded-xl bg-[#9d3526] px-5 py-2.5 text-sm font-bold text-white transition-transform active:scale-95">Continuer sans la position</button>                  </div>
+                    <button type="button" onClick={prepareWithoutLocation} className="mt-4 rounded-xl bg-[#9d3526] px-5 py-2.5 text-sm font-bold text-white transition-transform active:scale-95">Continuer sans la position</button>
+                  </div>
                 )}
 
                 <div className="pt-4 pb-8">
-                  <button
-                    type="button"
+                  <button 
+                    type="button" 
                     disabled={selectedContacts.length === 0}
                     onPointerDown={onPointerDown}
                     onPointerUp={stopPress}
@@ -353,7 +354,7 @@ export default function SosPage() {
                       const isIOS = typeof navigator !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent || '');
                       const separator = isIOS ? '&' : '?';
                       const href = `sms:${c.phone}${separator}body=${encodeURIComponent(preparedMessage)}`;
-
+                      
                       return (
                         <a key={c.id} href={href} className="group flex items-center justify-between rounded-xl bg-[#20283c] p-4 sm:p-5 text-white shadow-md hover:bg-[#323c52] transition-all active:scale-[0.98] focus:outline-none focus-visible:ring-4 focus-visible:ring-[#20283c] focus-visible:ring-offset-2 focus-visible:ring-offset-[#faf6ec]">
                           <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
