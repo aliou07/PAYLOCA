@@ -145,7 +145,7 @@ function PwaInstallButton({ compact = false }: { compact?: boolean }) {
     await install();
   };
   return (
-    <span className={`${compact ? 'flex w-full flex-col items-stretch' : 'inline-flex flex-col items-start'}`}>
+    <span className={`${compact ? 'flex w-full flex-col items-stretch' : 'hidden flex-col items-start lg:inline-flex'}`}>
       <button
         type="button"
         onClick={handleInstall}
@@ -368,18 +368,18 @@ function Header() {
   const accountHome = accountType === 'agency' ? '/espace-agence' : accountType === 'ong' ? '/espace-ong' : '/';
   return (
      <header className="sticky top-0 z-40 border-b border-[#dfd7c4] bg-[#f4efdf]/95 backdrop-blur-md">
-       <div className="page-shell flex h-[72px] items-center justify-between gap-4">
-        <Link href="/" className="group flex items-center gap-3" data-testid="link-logo">
+        <div className="page-shell flex h-[72px] min-w-0 items-center justify-between gap-4">
+         <Link href="/" className="group flex min-w-0 items-center gap-3" data-testid="link-logo">
            <span className="relative grid size-10 place-items-center rounded-[13px] bg-[#20283c] text-[#f7e8b4] shadow-[0_0_26px_rgba(255,78,174,.28)]">
             <HomeIcon size={21} strokeWidth={2.4} />
              <span className="absolute -right-1 -top-1 size-2 rounded-full bg-[#b95740] shadow-[0_0_10px_rgba(255,78,174,.8)]" />
           </span>
           <span>
             <span className="block font-display text-[21px] font-bold leading-none tracking-[-.03em] text-[#20283c]">PAYLOCA</span>
-            <span className="mt-1 block text-[10px] font-bold uppercase tracking-[.18em] text-[#b95740]">Trouver son chez-soi</span>
+             <span className="site-brand-tagline mt-1 block text-[10px] font-bold uppercase tracking-[.18em] text-[#b95740]">Trouver son chez-soi</span>
           </span>
         </Link>
-         <nav className="hidden items-center gap-5 xl:gap-7 md:flex" aria-label="Navigation principale">
+          <nav className="hidden items-center gap-5 xl:gap-7 lg:flex" aria-label="Navigation principale">
           {nav.map((item) => (
              <Link key={item.href} href={item.href} data-testid={`link-nav-${item.label.toLowerCase().replaceAll(' ', '-')}`} className={`relative py-2 text-xs font-semibold transition-colors ${location === item.href ? 'text-[#b95740]' : 'text-[#596071] hover:text-[#20283c]'}`}>
               {item.label}
@@ -392,13 +392,13 @@ function Header() {
            <Plus size={16} /> Publier une annonce
          </Link>}
          {isSignedIn ? <div className="hidden items-center gap-2 lg:flex">{membership.plan === 'vip_or' && <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-[#e9b949] to-[#c9921f] px-2 py-1 text-[10px] font-extrabold text-[#20283c]" data-testid="badge-vip-or"><Crown size={12} /> VIP OR</span>}{membership.plan === 'vip_bronze' && <span className="inline-flex items-center gap-1 rounded-full bg-[#9da3ae] px-2 py-1 text-[10px] font-extrabold text-white" data-testid="badge-vip-bronze"><Crown size={12} /> VIP BRONZE</span>}<span className="max-w-28 truncate text-xs font-bold text-[#596071]">{displayName(user)}</span><button type="button" onClick={handleSignOut} disabled={revokingPushAccess} className="rounded-full border border-[#d9cfbc] px-3 py-2 text-xs font-bold text-[#596071] hover:bg-[#ece3d0] disabled:opacity-60">{revokingPushAccess ? 'Sécurisation...' : 'Déconnexion'}</button></div> : <Link href="/sign-in" className="hidden rounded-full border border-[#20283c] px-4 py-2 text-sm font-bold text-[#20283c] hover:bg-[#ece3d0] lg:block">Connexion</Link>}
-         <button type="button" aria-label="Ouvrir le menu" data-testid="button-mobile-menu" onClick={() => setOpen(!open)} className="rounded-xl border border-[#d9cfbc] p-2 text-[#20283c] md:hidden">
+          <button type="button" aria-label="Ouvrir le menu" data-testid="button-mobile-menu" onClick={() => setOpen(!open)} className="rounded-xl border border-[#d9cfbc] p-2 text-[#20283c] lg:hidden">
           {open ? <X size={24} /> : <Menu size={24} />}
         </button>
       </div>
       {open && (
-        <div className="border-t border-[#dfd7c4] bg-[#f8f3e6] px-4 py-4 md:hidden">
-          <nav className="page-shell flex flex-col gap-1">
+         <div className="border-t border-[#dfd7c4] bg-[#f8f3e6] px-4 py-4 lg:hidden">
+       <nav className="page-shell flex min-w-0 flex-col gap-1">
             {nav.map((item) => <Link key={item.href} href={item.href} onClick={() => setOpen(false)} data-testid={`link-mobile-${item.label.toLowerCase().replaceAll(' ', '-')}`} className="rounded-xl px-4 py-3 font-semibold text-[#20283c] hover:bg-[#ece3d0]">{item.label}</Link>)}
             <PwaInstallButton compact />
             {isSignedIn && <button type="button" onClick={handleSignOut} disabled={revokingPushAccess} className="rounded-xl px-4 py-3 text-left font-semibold text-[#b95740] hover:bg-[#ece3d0] disabled:opacity-60">{revokingPushAccess ? 'Sécurisation...' : 'Déconnexion'}</button>}
@@ -1565,45 +1565,23 @@ function LaunchScreen({ onEnter }: { onEnter: () => void }) {
     return () => window.clearTimeout(timeout);
   }, []);
 
-  return <main className="launch-screen" aria-label="Présentation de PAYLOCA">
+  return <main className="launch-screen" aria-label="PAYLOCA">
     <div className="launch-glow launch-glow-left" />
     <div className="launch-glow launch-glow-right" />
-    <div className="launch-shell">
-      <div className="launch-topline">
-        <span className="launch-location"><MapPin size={14} /> Niger</span>
-        <span className="launch-status"><span className="launch-status-dot" /> Ouverture en cours</span>
+    <div className="launch-minimal-shell">
+      <div className="launch-minimal-art" aria-hidden="true">
+        <span className="launch-minimal-ring launch-minimal-ring-one" />
+        <span className="launch-minimal-ring launch-minimal-ring-two" />
+        <span className="launch-minimal-star launch-minimal-star-one">✦</span>
+        <span className="launch-minimal-star launch-minimal-star-two">+</span>
       </div>
-      <section className="launch-hero">
+      <div className="launch-minimal-center">
         <div className="launch-brand">
-          <span className="launch-brand-mark"><Sparkles size={22} strokeWidth={2.4} /></span>
           <span className="launch-brand-name">PAYLOCA</span>
         </div>
-        <p className="launch-kicker">Votre quotidien, au même endroit</p>
-        <h1>Découvrez ce qui vous attend.</h1>
-        <p className="launch-description">Services, emploi et communauté : PAYLOCA rapproche les bonnes personnes au Niger.</p>
-      </section>
-      <section className="launch-preview" aria-label="Fonctionnalités de PAYLOCA">
-        <div className="launch-feature launch-feature-main">
-          <span className="launch-feature-icon launch-feature-icon-cyan"><Sparkles size={19} /></span>
-          <span><strong>PAYLOCA FUN</strong><small>Vidéos et moments locaux</small></span>
-          <ArrowRight size={17} className="launch-feature-arrow" />
-        </div>
-        <div className="launch-feature">
-          <span className="launch-feature-icon launch-feature-icon-cyan"><Search size={18} /></span>
-          <span><strong>Services</strong><small>Près de chez vous</small></span>
-        </div>
-        <div className="launch-feature">
-          <span className="launch-feature-icon launch-feature-icon-coral"><BriefcaseIcon size={18} /></span>
-          <span><strong>Emploi</strong><small>Opportunités locales</small></span>
-        </div>
-        <div className="launch-feature">
-          <span className="launch-feature-icon launch-feature-icon-gold"><Sparkles size={18} /></span>
-          <span><strong>Communauté</strong><small>Partagez & découvrez</small></span>
-        </div>
-      </section>
-      <div className="launch-footer">
-        {ready ? <button type="button" className="launch-enter" onClick={onEnter}>Entrer dans PAYLOCA <ArrowRight size={14} /></button> : <span>Préparation de votre espace</span>}
-        <span className="launch-loader" aria-hidden="true"><span /></span>
+        <button type="button" className="launch-minimal-enter" onClick={onEnter} disabled={!ready} aria-label={ready ? 'Entrer dans PAYLOCA' : 'Préparation de PAYLOCA'}>
+          {ready ? <ArrowRight size={18} /> : <span className="launch-minimal-loader" aria-hidden="true" />}
+        </button>
       </div>
     </div>
   </main>;
@@ -1621,7 +1599,7 @@ function AppContent() {
     return () => { window.removeEventListener('online', handleOnline); window.removeEventListener('offline', handleOffline); };
   }, []);
   const isAuthRoute = location.startsWith('/sign-in') || location.startsWith('/sign-up');
-  return <QueryClientProvider client={queryClient}><TooltipProvider>{showLaunchScreen ? <LaunchScreen onEnter={() => setShowLaunchScreen(false)} /> : <><Router /><NotificationBootstrap />{isSignedIn && !isAuthRoute && <Onboarding />}<Toaster /></>}</TooltipProvider></QueryClientProvider>;
+  return <QueryClientProvider client={queryClient}><TooltipProvider>{showLaunchScreen ? <LaunchScreen onEnter={() => { setShowLaunchScreen(false); setLocation('/fil'); }} /> : <><Router /><NotificationBootstrap />{isSignedIn && !isAuthRoute && <Onboarding />}<Toaster /></>}</TooltipProvider></QueryClientProvider>;
 }
 
 function App() {
