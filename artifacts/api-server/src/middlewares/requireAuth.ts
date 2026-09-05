@@ -9,6 +9,7 @@ import { normalizeNigerPhone } from "../lib/phone";
 export type AuthenticatedRequest = Request & {
   userId: string;
   userName: string;
+  isAdministrator: boolean;
   isModerator: boolean;
   accountType: AccountType | null;
   accountTypeLoaded: boolean;
@@ -39,6 +40,16 @@ export const requireAuth: RequestHandler = async (req, res, next) => {
   }
   const userId = claims.uid;
   const membership = await getOrCreateMembership(userId);
+  const configuredAdminEmail = process.env.PAYLOCA_ADMIN_EMAIL?.trim().toLowerCase();
+  const configuredAdminPhone = normalizeNigerPhone(process.env.PAYLOCA_ADMIN_PHONE ?? "");
+  const verifiedEmail = typeof claims.email === "string" ? claims.email.trim().toLowerCase() : "";
+  const verifiedPhone = typeof claims.phone_number === "string"
+    ? normalizeNigerPhone(claims.phone_number)
+    : "";
+  const isAdministrator = claims.admin === true
+    || Boolean(configuredAdminEmail && verifiedEmail && configuredAdminEmail === verifiedEmail)
+    || Boolean(configuredAdminPhone && verifiedPhone && configuredAdminPhone === verifiedPhone);
+  const isModerator = isAdministrator || claims.moderator === true;
   const [account] = await db.select({
     accountType: accountTypesTable.accountType,
   })
@@ -49,15 +60,16 @@ export const requireAuth: RequestHandler = async (req, res, next) => {
     ? account.accountType as AccountType
     : null;
   (req as AuthenticatedRequest).userId = userId;
-  (req as AuthenticatedRequest).membershipStatus = membership.status;
+  (req as AuthenticatedRequest).membershipStatus = isAdministrator ? "BOSS_VIP" : membership.status;
   (req as AuthenticatedRequest).trialEndsAt = membership.trialEndsAt;
   (req as AuthenticatedRequest).referralWeeksActive = membership.referralWeeksActive;
   (req as AuthenticatedRequest).accountType = accountType;
   (req as AuthenticatedRequest).accountTypeLoaded = true;
+  (req as AuthenticatedRequest).isAdministrator = isAdministrator;
   (req as AuthenticatedRequest).userName = typeof claims.name === "string" && claims.name.trim()
     ? claims.name.trim()
     : "Utilisateur PAYLOCA";
-  (req as AuthenticatedRequest).isModerator = claims.admin === true || claims.moderator === true;
+  (req as AuthenticatedRequest).isModerator = isModerator;
   (req as AuthenticatedRequest).phoneNumber = typeof claims.phone_number === "string"
     ? normalizeNigerPhone(claims.phone_number)
     : null;
@@ -99,7 +111,8 @@ export function requireAccountType(
 }
 
 export function requireVipAccess(req: Request, res: Parameters<RequestHandler>[1]): boolean {
-  const { membershipStatus, referralWeeksActive } = req as AuthenticatedRequest;
+  const { isAdministrator, membershipStatus, referralWeeksActive } = req as AuthenticatedRequest;
+  if (isAdministrator) return true;
   if (membershipStatus === "LECTURE_GRATUITE" && !(referralWeeksActive > 0)) {
     res.status(403).json({
       error: "Votre essai VIP est terminé. Choisissez un abonnement pour publier et envoyer des messages.",
@@ -131,7 +144,7 @@ export function requireUserVip(req: Request, res: Parameters<RequestHandler>[1])
     res.status(403).json({ error: "Cette fonctionnalité est réservée à l’espace utilisateur.", code: "USER_ACCOUNT_REQUIRED" });
     return false;
   }
-  if (planForMembershipStatus(authenticated.membershipStatus) === "free") {
+  if (!authenticated.isAdministrator && planForMembershipStatus(authenticated.membershipStatus) === "free") {
     res.status(403).json({ error: "Un abonnement VIP est nécessaire pour déposer une candidature.", code: "USER_FEATURE_SUBSCRIPTION_REQUIRED" });
     return false;
   }
