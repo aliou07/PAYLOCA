@@ -1,11 +1,5 @@
 services:
-    - type: web
-    name: payloca-api
-    rootDir: artifacts/api-server
-    buildCommand: pnpm install && pnpm build
-    startCommand: pnpm start
-    - type: web
-    name: payloca-site
-    rootDir: artifacts/niger-habitat
-    buildCommand: pnpm install && pnpm build
-    staticPublishPath: ./dist
+  web:
+    envVars:
+      - key: NODE_VERSION
+        value: 20
