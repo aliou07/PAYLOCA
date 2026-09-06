@@ -10,13 +10,13 @@ export const followsTable = pgTable("payloca_follows", {
   status: text("status").notNull().default("pending"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
-}, (table) => [
-  uniqueIndex("payloca_follows_pair_unique").on(table.followerId, table.followingId),
-  index("payloca_follows_follower_idx").on(table.followerId),
-  index("payloca_follows_following_idx").on(table.followingId),
-  check("payloca_follows_no_self_check", sql`${table.followerId} <> ${table.followingId}`),
-  check("payloca_follows_status_check", sql`${table.status} in ('pending', 'accepted', 'rejected')`),
-]);
+}, (table) => ({
+  paylocaFollowsPairUnique: uniqueIndex("payloca_follows_pair_unique").on(table.followerId, table.followingId),
+  paylocaFollowsFollowerIdx: index("payloca_follows_follower_idx").on(table.followerId),
+  paylocaFollowsFollowingIdx: index("payloca_follows_following_idx").on(table.followingId),
+  paylocaFollowsNoSelfCheck: check("payloca_follows_no_self_check", sql`${table.followerId} <> ${table.followingId}`),
+  paylocaFollowsStatusCheck: check("payloca_follows_status_check", sql`${table.status} in ('pending', 'accepted', 'rejected')`),
+}));
 
 export const insertFollowSchema = createInsertSchema(followsTable).omit({ id: true, createdAt: true, updatedAt: true });
 export type InsertFollow = z.infer<typeof insertFollowSchema>;
