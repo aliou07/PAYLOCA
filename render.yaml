@@ -1,11 +1,12 @@
 services:
-  - type: web
+    - type: web
     name: payloca
     runtime: node
-    buildCommand: pnpm install --no-frozen-lockfile && pnpm run build
+    buildCommand: pnpm install --prod=false --no-frozen-lockfile && pnpm run build
     startCommand: pnpm run start
+    nodeVersion: 20
     envVars:
-      - key: NODE_VERSION
-        value: "20"
-      - key: PNPM_HOME
+            - key: PNPM_HOME
         value: /opt/render/.pnpm
+            - key: PATH
+        value: /opt/render/.pnpm:$PATH
