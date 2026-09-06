@@ -2,6 +2,6 @@ services:
     - type: web
     name: payloca
     runtime: node
-    buildCommand: npm ci && npm run build
+    buildCommand: npm ci --include=dev && npm run build
     startCommand: npm run start
     nodeVersion: 20
