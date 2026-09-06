@@ -746,3 +746,17 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   .fun-publish-entry { flex-wrap: wrap; }
   .fun-publish-button { margin-left: auto; }
 }
+
+.launch-signature {
+  position: absolute;
+  right: clamp(1.25rem, 8vw, 4rem);
+  bottom: calc(10% + 1rem);
+  z-index: 3;
+  color: hsl(34 38% 96% / .62);
+  font-family: var(--app-font-mono);
+  font-size: .58rem;
+  font-weight: 700;
+  letter-spacing: .24em;
+  line-height: 1;
+  text-transform: uppercase;
+}
