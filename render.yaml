@@ -1,5 +1,11 @@
 services:
-  web:
+  - type: web
+    name: payloca
+    env: node
+    buildCommand: corepack enable && corepack prepare pnpm@10.17.1 --activate && pnpm install && pnpm --filter @workspace/api-server run build
+    startCommand: pnpm --filter @workspace/api-server run start
     envVars:
       - key: NODE_VERSION
-        value: 20
+        value: "20"
+      - key: PNPM_HOME
+        value: /opt/render/.pnpm
