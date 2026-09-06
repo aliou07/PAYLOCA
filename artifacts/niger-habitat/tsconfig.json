@@ -1,0 +1,10 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "incremental": true,
+    "tsBuildInfoFile": ".tsbuildinfo",
+    "lib": ["es2022"],
+    "types": ["node"]
+  },
+  "files": ["src/typecheck.ts"]
+}
