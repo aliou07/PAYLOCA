@@ -1,4 +1,4 @@
-import { index, pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import { index, pgTable, text, timestamp, integer } from "drizzle-orm/pg-core";
 
 export const feedTable = pgTable("payloca_feed", {
   id: text("id").primaryKey(),
