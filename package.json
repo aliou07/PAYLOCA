@@ -3,10 +3,10 @@
   "version": "0.0.0",
   "license": "MIT",
   "scripts": {
-    "build": "pnpm install --no-frozen-lockfile && pnpm run typecheck:libs && pnpm --filter @workspace/api-server run build",
-    "start": "pnpm --filter @workspace/api-server run start",
+    "build": "npm install --no-frozen-lockfile && npm run typecheck:libs && npm --workspace=@workspace/api-server run build",
+    "start": "npm --workspace=@workspace/api-server run start",
     "typecheck:libs": "tsc --build",
-    "typecheck": "pnpm run typecheck:libs"
+    "typecheck": "npm run typecheck:libs"
   },
   "pnpm": {
     "overrides": {
@@ -20,7 +20,6 @@
     }
   },
   "private": true,
-  "packageManager": "pnpm@12.3.4",
   "engines": {
     "node": "20.x"
   },
