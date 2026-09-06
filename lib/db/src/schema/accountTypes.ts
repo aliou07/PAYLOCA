@@ -13,11 +13,11 @@ export const accountTypesTable = pgTable("payloca_account_types", {
   dateOfBirth: date("date_of_birth", { mode: "string" }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
-}, (table) => [
-  check("account_types_type_check", sql`${table.accountType} in ('user', 'agency', 'ong')`),
-  check("account_types_city_check", sql`${table.city} is null or char_length(${table.city}) between 2 and 80`),
-  check("account_types_birth_date_check", sql`${table.dateOfBirth} is null or ${table.dateOfBirth} >= date '1900-01-01'`),
-]);
+}, (table) => ({
+  accountTypesTypeCheck: check("account_types_type_check", sql`${table.accountType} in ('user', 'agency', 'ong')`),
+  accountTypesCityCheck: check("account_types_city_check", sql`${table.city} is null or char_length(${table.city}) between 2 and 80`),
+  accountTypesBirthDateCheck: check("account_types_birth_date_check", sql`${table.dateOfBirth} is null or ${table.dateOfBirth} >= date '1900-01-01'`),
+}));
 
 export const insertAccountTypeSchema = createInsertSchema(accountTypesTable).omit({
   createdAt: true,
