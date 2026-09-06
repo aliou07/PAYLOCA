@@ -11,10 +11,10 @@ export const callsTable = pgTable("payloca_calls", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
   respondedAt: timestamp("responded_at", { withTimezone: true }),
-}, (table) => [
-  index("payloca_calls_creator_idx").on(table.creatorId),
-  index("payloca_calls_recipient_idx").on(table.recipientId),
-  index("payloca_calls_status_idx").on(table.status),
-]);
+}, (table) => ({
+  paylocaCallsCreatorIdx: index("payloca_calls_creator_idx").on(table.creatorId),
+  paylocaCallsRecipientIdx: index("payloca_calls_recipient_idx").on(table.recipientId),
+  paylocaCallsStatusIdx: index("payloca_calls_status_idx").on(table.status),
+}));
 
 export type Call = typeof callsTable.$inferSelect;
