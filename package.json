@@ -2,12 +2,12 @@
   "name": "workspace",
   "version": "0.0.0",
   "license": "MIT",
-  "scripts": {
-    "build": "npm install --no-frozen-lockfile && npm run typecheck:libs && npm --workspace=@workspace/api-server run build",
-    "start": "npm --workspace=@workspace/api-server run start",
-    "typecheck:libs": "tsc --build",
-    "typecheck": "npm run typecheck:libs"
-  },
+ "scripts": {
+  "build": "vite build",
+  "dev": "vite",
+  "preview": "vite preview",
+  "start": "npx serve -s dist"
+},
   "pnpm": {
     "overrides": {
       "brace-expansion@5.0.8": "5.0.9",
