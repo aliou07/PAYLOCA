@@ -4,12 +4,11 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   build: {
-    // On ignore les erreurs de tsconfig manquant
-    emptyOutDir: true,
-  },
-  resolve: {
-    alias: {
-      '@': '/src'
+    rollupOptions: {
+      external: [] // on laisse vide
     }
+  },
+  optimizeDeps: {
+    exclude: ['@payloca/db'] // si tu as un workspace
   }
 })
