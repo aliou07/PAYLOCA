@@ -297,7 +297,8 @@ paths:
       parameters:
         - name: id
           in: path
-          required: true          schema:
+          required: true
+          schema:
             type: number
       requestBody:
         required: true
@@ -896,7 +897,8 @@ paths:
       summary: Publish one authenticated and idempotent feed post
       requestBody:
         required: true
-        content:          application/json:
+        content:
+          application/json:
             schema:
               $ref: "#/components/schemas/FeedPostInput"
       responses:
@@ -1595,7 +1597,8 @@ components:
           minimum: 0
         bedrooms:
           type: number
-          minimum: 0        imageUrl:
+          minimum: 0
+        imageUrl:
           type: string
         description:
           type: string
@@ -2294,7 +2297,8 @@ components:
           maxLength: 255
         size:
           type: number
-          minimum: 1          maximum: 83886080
+          minimum: 1
+          maximum: 83886080
         contentType:
           type: string
           enum: [video/mp4, video/webm, video/quicktime]
