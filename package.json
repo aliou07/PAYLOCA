@@ -34,6 +34,7 @@
   "typescript": "^5.5.4",
   "drizzle-kit": "^0.24.0",
   "@types/node": "^22.5.0",
+  "@vitejs/plugin-react": "^4.x",
   "vite": "^5.x"
 }
 }
