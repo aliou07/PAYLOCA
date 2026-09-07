@@ -4,7 +4,7 @@
   "license": "MIT",
   "private": true,
   "engines": {
-    "node": "20.x"
+    "node": "24.x"
   },
   "scripts": {
     "build:db": "cd lib/db && npm install --include=dev && tsc",
