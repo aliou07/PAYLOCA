@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { supabase } from './lib/db/client'
+import { supabase } from './lib/supabaseClient'
 import './App.css' // On va créer le CSS
 
 function App() {
