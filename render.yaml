@@ -1,7 +1,11 @@
 services:
-    - type: web
-    name: payloca
-    runtime: node
-    buildCommand: npm ci --include=dev && npm run build
-    startCommand: npm run start
-    nodeVersion: 20
+  - type: web
+    name: payloca-frontend
+    env: static
+    rootDir: artifacts/niger-habitat
+    buildCommand: pnpm install --frozen-lockfile && pnpm run build
+    staticPublishPath: dist/public
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
