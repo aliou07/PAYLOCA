@@ -1,9 +1,9 @@
-services:
+ervices:
   - type: web
     name: payloca-frontend
     env: static
     rootDir: artifacts/niger-habitat
-    buildCommand: pnpm install --frozen-lockfile && pnpm run build
+    buildCommand: npm install --include=dev && npm run build
     staticPublishPath: dist/public
     routes:
       - type: rewrite
