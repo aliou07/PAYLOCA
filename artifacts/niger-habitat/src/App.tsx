@@ -1607,21 +1607,3 @@ function App() {
 }
 
 export default App;
-<div className="launch-enter-group">
-  <button
-    type="button"
-    className="launch-minimal-enter"
-    onClick={onEnter}
-    disabled={!ready}
-    aria-label={ready ? 'Entrer dans PAYLOCA' : 'Préparation de PAYLOCA'}
-  >
-    {ready ? (
-      <ArrowRight size={18} />
-    ) : (
-      <span className="launch-minimal-loader" aria-hidden="true" />
-    )}
-  </button>
-</div>
-</div>
-
-<span className="launch-signature">ZATOULENSSAR</span>

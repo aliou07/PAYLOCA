@@ -1,6 +1,3 @@
-## `artifacts/niger-habitat/src/pages/search.tsx`
-
-```tsx
 import { useEffect, useState } from "react";
 import { Link } from "wouter";
 import { Loader2, Search as SearchIcon, UserPlus, Check, Hash } from "lucide-react";
@@ -132,4 +129,3 @@ export default function SearchPage() {
     </div>
   );
 }
-```
