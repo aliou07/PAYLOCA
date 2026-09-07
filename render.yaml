@@ -1,10 +1,13 @@
-ervices:
+services:
   - type: web
     name: payloca-frontend
     env: static
     rootDir: artifacts/niger-habitat
-    buildCommand: npm install --include=dev && npm run build
+    buildCommand: npm install --include=dev && npm run typecheck && npm run build
     staticPublishPath: dist/public
+    envVars:
+      - key: BASE_PATH
+        value: /
     routes:
       - type: rewrite
         source: /*
